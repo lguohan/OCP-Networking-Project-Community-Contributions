@@ -32,20 +32,6 @@
 
 #include <saitypes.h>
 
-
-/*
-*  Next hop type
-*/
-typedef enum _sai_next_hop_type_t
-{
-    SAI_NEXT_HOP_IP,
-
-    /* 
-    Tunneling to be added later
-    */
-
-} sai_next_hop_type_t;
-
 /*
 *  Attribute id for next hop
 */
@@ -55,12 +41,7 @@ typedef enum _sai_next_hop_attr_t
 
     /* READ-WRITE */
 
-    /* Next hop entry type [sai_next_hop_type_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
-    SAI_NEXT_HOP_ATTR_TYPE,
-
-    /* Next hop entry ipv4 address [sai_ip_address_t]
-     * (MANDATORY_ON_CREATE when SAI_NEXT_HOP_ATTR_TYPE = SAI_NEXT_HOP_IP)
-     * (CREATE_ONLY) */
+    /* Next hop entry ip address [sai_ip_address_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
     SAI_NEXT_HOP_ATTR_IP,
 
     /* Next hop entry router interface id [sai_object_id_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
