@@ -226,6 +226,7 @@ typedef union {
     sai_ip4_t ip4;
     sai_ip6_t ip6;
     sai_ip_address_t ipaddr;
+    sai_object_id_t intf;
     sai_object_list_t objlist;
     sai_acl_field_data_t aclfield;
     sai_acl_action_data_t acldata;
