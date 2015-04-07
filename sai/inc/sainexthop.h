@@ -44,8 +44,8 @@ typedef enum _sai_next_hop_attr_t
     /* Next hop entry ip address [sai_ip_address_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
     SAI_NEXT_HOP_ATTR_IP,
 
-    /* Next hop entry router interface id [sai_object_id_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
-    SAI_NEXT_HOP_ATTR_ROUTER_INTERFACE_ID,
+    /* Next hop entry l3 egress interface id [sai_object_id_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
+    SAI_NEXT_HOP_ATTR_L3_EGRESS_INTERFACE_ID,
 
     /* -- */
 

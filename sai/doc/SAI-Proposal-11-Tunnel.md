@@ -1,35 +1,46 @@
-SAI Tunnel Interface Proposal
+SAI L3 Tunnel Interface API Proposal
 =====================
 
- Title       | SAI tunnel interface
+ Title       | SAI L3 Tunnel Interface API Proposal
 -------------|----------------------
  Authors     | Microsoft
  Status      | In review
  Type        | Standards track
  Created     | 04/03/2015
- SAI-Version | 0.9.2
+ SAI-Version | 0.9.3
 
 ---------
 
 ## Overview ##
 
-Tunnel is an network channel that enables communications between two network devices. Typically, tunnel is implemented by packet encapsulation.
-For example, encapsulating a packet with an IP header whose IP destination is A, enables the packet goes to A, no matter what is the original IP destination in the packet, just like the packet is going through a channel.
+L3 tunnels, such as IP-in-IP, GRE, NVGRE, VXLAN, GENEVE, use IP fabrics as a transit network. They use IP encapsulation to deliver packets to the destination in the network through standard switching and routing.
 
-In SAI, tunnel is created by creating two **tunnel operators** at each end of the tunnel. At the beginning of the tunnel, we create a **a tunnel initiator**. At the end of the tunnel we create **a tunnel terminator**. (If one end of the tunnel is a server, instead of a switch, it does not need to create a tunnel initiator or a tunnel initiator. We depends on softwares for the packet encapsulation and decapsulation. In the following of this document, we ignore the case that either end is a server.)
+The SAI tunnel API provides separate APIs to manage **L3 tunnel ingress interface** and **L3 tunnel egress interface**. L3 tunnel egress interface is created at the starting endpoint of the tunnel to do the encapsulation, and the L3 tunnel ingress interface is created at the termination endpoint of the tunnel to decapsulate the tunneled packet. (Here egress means it is the outgoing interface of the switch, while ingress means it is the incoming interface of the switch.)
 
-A tunnel initiator is the beginning of a tunnel. Every packet goes into a tunnel from the tunnel initiator. A tunnel initiator is bound to a router interface. Whenever a packet goes to the router interface, the packet goes into the tunnel. The tunnel initiator contains enough information to fill up the encap header. For example, first of all, it contains the encap header type, e.g., an IPv4 header or an IPv6 header. If it is an IPv4 header, it will have to contain the information for the source IP address, the destination IP address, the TTL, the DSCP value, etc.
+(Current proposal only defines APIs for IP-in-IP tunnel egress interfaces, others are left for the future)
 
-A tunnel terminator is the end of a tunnel. Every packet goes out of a tunnel from the tunnel terminator. A tunnel terminator is not bound to a specific router interface. Every packet goes into the switch will pass the tunnel terminator. If the packet header matches the tunnel information (<span style="color:red">To be more accurate here</span>). The tunnel header will be decapsulated. A tunnel terminator also contains the information of the tunnel type, the source IP address, the destination IP address, the TTL and the DSCP value, etc.
+### L3 Tunnel Egress Interface Model ###
+
+There are two types of L3 egress interface defined in the SAI, namely **router interface** and **l3 tunnel egress interface**. To note, the router interface object is used for both ingress and egress interface. As shown in Figure 1, the sai\_next\_hop object can point to either a router interface or a tunnel egress interface. A tunnel egress interface must point to a router interface. In this model, the tunnel egress interface is responsible for adding the tunneling header, e.g., IP, GRE, NVGRE. The router interface is responsible for updating the Ethernet source mac and vlan header. The next hop provides the destination mac information. When multiple tunnel egress interfaces point to a same router interface, all these tunnels will share a same source mac address and vlan id.
+
+As specified in earlier spec, a route object can point to either a next hop object or a next hop group object. In case the route points to a next hop group, and the next hop group object points to multiple next hops, and each next hop points to a tunnel egress interface. This will spread the IP packets over a set of L3 tunnels. 
+
+![Relations between SAI objects](figures/sai_tunnel.png "Figure 1: Relations between SAI objects")
+
+__Figure 1: Relations between SAI objects__
+
+
+### L3 Tunnel Ingress Interface Model ###
+
+To be done.
 
 ## Specification ##
 
 ### Changes To sai.h ###
 
-A new type **SAI_API_TUNNEL** is added.
+A new type **SAI_API_L3_TUNNEL** is added.
 
-<pre>
-<code>
+~~~cpp
 /*
 *
 * Defined API sets have assigned ID's. If specific api method table changes
@@ -54,17 +65,44 @@ typedef enum _sai_api_t
     SAI_API_QOS              = 11,  /* sai_qos_api_t */
     SAI_API_ACL              = 12,  /* sai_acl_api_t */
     SAI_API_HOST_INTERFACE   = 13,  /* sai_host_interface_api_t */
-<span style="color:red">    SAI_API_TUNNEL           = 14,  /* sai_tunnel_api_t */</span>
+    SAI_API_L3_TUNNEL        = 14,  /* sai_l3_tunnel_api_t */
 } sai_api_t;
-</code>
-</pre>
+~~~
 
 ### Changes To saitypes.h ###
 
+#### Next Hop Attribute ####
+SAI\_NEXT\_HOP\_ATTR\_ROUTER\_INTERFACE\_ID is changed to SAI\_NEXT\_HOP\_ATTR\_L3\_EGRESS\_INTERFACE\_ID.
+
+~~~cpp
+/*
+*  Attribute id for next hop
+*/
+typedef enum _sai_next_hop_attr_t
+{
+    /* READ-ONLY */
+
+    /* READ-WRITE */
+
+    /* Next hop entry ip address [sai_ip_address_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
+    SAI_NEXT_HOP_ATTR_IP,
+
+    /* Next hop entry l3 egress interface id [sai_object_id_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
+    SAI_NEXT_HOP_ATTR_L3_EGRESS_INTERFACE_ID,
+
+    /* -- */
+
+    /* Custom range base value */
+    SAI_NEXT_HOP_ATTR_CUSTOM_RANGE_BASE  = 0x10000000
+
+} sai_next_hop_attr_t;
+~~~
+
+#### Attirbute Value ####
+
 A new attribute value type, **sai_object_id_t**, is added.
 
-<pre>
-<code>
+~~~cpp
 /*
  * Data Type to use enum's as attribute value is sai_int32_t s32
  *
@@ -84,94 +122,114 @@ typedef union {
     sai_ip4_t ip4;
     sai_ip6_t ip6;
     sai_ip_address_t ipaddr;
-<span style="color:red">    sai_object_id_t intf;</span>
+    sai_object_id_t intf;
     sai_object_list_t objlist;
     sai_acl_field_data_t aclfield;
     sai_acl_action_data_t acldata;
 } sai_attribute_value_t;
-</code>
-</pre>
+~~~
 
-### New Header saitunnel.h ###
+### New Header sail3tunnelintf.h ###
 
-#### Tunnel Operator Type ####
+#### L3 Tunnel Egress Interface Type ####
 
-*sai_tunnel_operator_type_t* defines the types of the tunnel. More specifically, it specifies the type of the encapsulated header. Currently, IPv4 and IPv6 are supported.
+*sai_l3_tunnel_egress_interface_type_t* defines the types of the tunnel. More specifically, it specifies the type of the encapsulated header. Currently, IPv4 and IPv6 are supported.
 
-<pre>
-<code>
+~~~cpp
 /*
- * Tunnel operator type, i.e., the type of the encapped header
+ * L3 tunnel egress interface type, i.e., the type of the encapped header
  */
-typedef enum _sai_tunnel_operator_type_t
+typedef enum _sai_l3_tunnel_egress_interface_type_t
 {
-    /* Sai tunnel operator IPv4 */
-    SAI_TUNNEL_OPERATOR_IPV4,
+    /* Sai l3 tunnel egress interface IPv4 */
+    SAI_L3_TUNNEL_EGRESS_INTERFACE_IPV4,
 
-    /* Sai tunnel operator IPv6 */
-    SAI_TUNNEL_OPERATOR_IPV6,
+    /* Sai l3 tunnel egress interface IPv6 */
+    SAI_L3_TUNNEL_EGRESS_INTERFACE_IPV6,
 
-} sai_tunnel_operator_type_t;
-</code>
-</pre>
+} sai_l3_tunnel_egress_interface_type_t;
+~~~
 
-#### Tunnel Operator Attribute ####
+#### L3 Tunnel Egress Interface Attribute ####
 
-*sai_tunnel_operator_attr_t* defines the tunnel operator attributes.
+*sai_l3_tunnel_egress_interface_attr_t* defines the l3 tunnel egress interface attributes.
 
-* SAI\_TUNNEL\_OPERATOR\_ATTR\_INTF [MANDATORY\_ON\_CREATE | CREATE\_ONLY]: Tunnel operator interface. This is only useful for a tunnel terminator.
-* SAI\_TUNNEL\_OPERATOR\_ATTR\_TYPE [MANDATORY\_ON\_CREATE | CREATE\_AND\_SET]: Tunnel operator type.
-* SAI\_TUNNEL\_OPERATOR\_ATTR\_SIP [MANDATORY\_ON\_CREATE | CREATE\_AND\_SET]: Tunnel operator source ip address.
-* SAI\_TUNNEL\_OPERATOR\_ATTR\_DIP [MANDATORY\_ON\_CREATE | CREATE\_AND\_SET]: Tunnel operator destination ip address.
-* SAI\_TUNNEL\_OPERATOR\_ATTR\_TTL [CREATE\_AND\_SET]: Tunnel operator ttl, the default value is 64.
-* SAI\_TUNNEL\_OPERATOR\_ATTR\_DSCP [CREATE\_AND\_SET]: Tunnel operator dscp, the default value is 0.
-* SAI\_TUNNEL\_OPERATOR\_ATTR\_IPV6\_FLOW\_LABEL [CREATE\_AND\_SET]: Tunnel operator IPv6 flow label, the default value is 0.
+* SAI\_L3\_TUNNEL\_EGRESS\_INTERFACE\_ATTR\_ROUTER\_INTF
+    * Property: MANDATORY\_ON\_CREATE | CREATE\_ONLY
+    * Value Type: sai\_object\_id\_t
+    * Comment: L3 tunnel egress interface router interface.
+* SAI\_L3\_TUNNEL\_EGRESS\_INTERFACE\_ATTR\_TYPE
+    * Property: MANDATORY\_ON\_CREATE | CREATE\_AND\_SET
+    * Value Type: sai\_l3\_tunnel\_egress\_interface\_type\_t
+    * Comment: L3 tunnel egress interface type
+* SAI\_L3\_TUNNEL\_EGRESS\_INTERFACE\_ATTR\_SIP
+    * Property: MANDATORY\_ON\_CREATE | CREATE\_AND\_SET
+    * Value Type: sai\_ip\_address\_t
+    * Comment: L3 tunnel egress interface source IP address. This has to be coherent with the SAI\_L3\_TUNNEL\_EGRESS\_INTERFACE\_ATTR\_TYPE.
+* SAI\_L3\_TUNNEL\_EGRESS\_INTERFACE\_ATTR\_DIP
+    * Property: MANDATORY\_ON\_CREATE | CREATE\_AND\_SET
+    * Value Type: sai\_ip\_address\_t
+    * Comment: L3 tunnel egress interface destination IP address. This has to be coherent with the SAI\_L3\_TUNNEL\_EGRESS\_INTERFACE\_ATTR\_TYPE.
+* SAI\_L3\_TUNNEL\_EGRESS\_INTERFACE\_ATTR\_TTL
+    * Property: CREATE\_AND\_SET
+    * Value Type: uint8\_t
+    * Comment: L3 tunnel egress interface ttl. The default value is 64.
+* SAI\_L3\_TUNNEL\_EGRESS\_INTERFACE\_ATTR\_DSCP
+    * Property: CREATE\_AND\_SET
+    * Value Type: uint8\_t
+    * Comment: L3 tunnel egress interface dscp. The default value is 0.
+* SAI\_L3\_TUNNEL\_EGRESS\_INTERFACE\_ATTR\_IPV6\_FLOW\_LABEL
+    * Property: CREATE\_AND\_SET
+    * Value Type: uint32\_t
+    * Comment: L3 tunnel egress interface IPv6 flow label. The default value is 0.
 
-<pre>
-<code>
+
+~~~cpp
 /*
- *  Attribute id for tunnel operator
+ *  Attribute id for l3 tunnel egress interface
  */
-typedef enum _sai_tunnel_operator_attr_t
+typedef enum _sai_l3_tunnel_egress_interface_attr_t
 {
-    /* Tunnel operator interface. This is only useful for a tunnel terminator [sai_object_id_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
-    SAI_TUNNEL_OPERATOR_ATTR_INTF,
+    /* READ-ONLY */
 
-    /* Tunnel operator type [sai_tunnel_operator_type_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
-    SAI_TUNNEL_OPERATOR_ATTR_TYPE,
+    /* L3 tunnel egress interface router interface. [sai_object_id_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
+    SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_ROUTER_INTF,
 
-    /* Tunnel operator source ip address [sai_ip_address_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
-    SAI_TUNNEL_OPERATOR_ATTR_SIP,
+    /* READ-WRITE */
 
-    /* Tunnel operator destination ip address [sai_ip_address_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
-    SAI_TUNNEL_OPERATOR_ATTR_DIP,
+    /* L3 tunnel egress interface type [sai_l3_tunnel_egress_interface_type_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
+    SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_TYPE,
 
-    /* Tunnel operator ttl [uint8_t] (CREATE_AND_SET) (default to 64) */
-    SAI_TUNNEL_OPERATOR_ATTR_TTL,
+    /* L3 tunnel egress interface source IP address. This has to be coherent with the SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_TYPE. [sai_ip_address_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
+    SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_SIP,
 
-    /* Tunnel operator dscp [uint8_t] (CREATE_AND_SET) (default to 0) */
-    SAI_TUNNEL_OPERATOR_ATTR_DSCP,
+    /* L3 tunnel egress interface destination IP address. This has to be coherent with the SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_TYPE. [sai_ip_address_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
+    SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_DIP,
 
-    /* Tunnel operator IPv6 flow label [uint32_t] (CREATE_AND_SET) (default to 0) */
-    SAI_TUNNEL_OPERATOR_ATTR_IPV6_FLOW_LABEL,
+    /* L3 tunnel egress interface ttl [uint8_t] (CREATE_AND_SET) (default to 64) */
+    SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_TTL,
 
-} sai_tunnel_operator_attr_t;
-</code>
-</pre>
+    /* L3 tunnel egress interface dscp [uint8_t] (CREATE_AND_SET) (default to 0) */
+    SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_DSCP,
+
+    /* L3 tunnel egress interface IPv6 flow label [uint32_t] (CREATE_AND_SET) (default to 0) */
+    SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_IPV6_FLOW_LABEL,
+
+} sai_l3_tunnel_egress_interface_attr_t;
+~~~
 
 
-#### Create Tunnel Operator ####
+#### Create L3 Tunnel Interface ####
 
-*sai_create_tunnel_operator_fn* defines the interface to create tunnel operator.
+*sai_create_l3_tunnel_interface_fn* defines the interface to create l3 tunnel interface.
 
-<pre>
-<code>
+~~~cpp
 /*
  * Routine Description:
- *    Create tunnel operator
+ *    Create l3 tunnel interface
  *
  * Arguments:
- *    [out] tunnel_operator_id - tunnel id
+ *    [out] l3_tunnel_interface_id - l3 tunnel interface id
  *    [in] attr_count - number of attributes
  *    [in] attr_list - array of attributes
  *
@@ -179,74 +237,68 @@ typedef enum _sai_tunnel_operator_attr_t
  *    SAI_STATUS_SUCCESS on success
  *    Failure status code on error
  */
-typedef sai_status_t (*sai_create_tunnel_operator_fn)(
-    _Out_ sai_object_id_t* tunnel_operator_id,
+typedef sai_status_t (*sai_create_l3_tunnel_interface_fn)(
+    _Out_ sai_object_id_t* l3_tunnel_interface_id,
     _In_ uint32_t attr_count,
     _In_ const sai_attribute_t *attr_list
     );
-</code>
-</pre>
+~~~
 
-#### Remove Tunnel Operator ####
+#### Remove L3 Tunnel Interface ####
 
-*sai_remove_tunnel_operator_fn* defines the interface to remove tunnel operator.
+*sai_remove_l3_tunnel_interface_fn* defines the interface to remove l3 tunnel interface.
 
-<pre>
-<code>
+~~~cpp
 /*
  * Routine Description:
- *    Remove tunnel operator
+ *    Remove l3 tunnel interface
  *
  * Arguments:
- *    [in] tunnel_operator_id - tunnel id
+ *    [in] l3_tunnel_interface_id - l3 tunnel interface id
  *
  * Return Values:
  *    SAI_STATUS_SUCCESS on success
  *    Failure status code on error
  */
-typedef sai_status_t (*sai_remove_tunnel_operator_fn)(
-    _In_ sai_object_id_t tunnel_operator_id
+typedef sai_status_t (*sai_remove_l3_tunnel_interface_fn)(
+    _In_ sai_object_id_t l3_tunnel_interface_id
     );
-</code>
-</pre>
+~~~
 
-#### Set Tunnel Operator Attributes ####
+#### Set L3 Tunnel Interface Attributes ####
 
-*sai_set_tunnel_operator_attribute_fn* defines the interface to set attributes for the tunnel operator.
+*sai_set_l3_tunnel_interface_attribute_fn* defines the interface to set attributes for the l3 tunnel interface.
 
-<pre>
-<code>
+~~~cpp
 /*
  * Routine Description:
- *    Set tunnel operator attribute
+ *    Set l3 tunnel interface attribute
  *
  * Arguments:
- *    [in] sai_object_id_t - tunnel_operator_id
+ *    [in] sai_object_id_t - l3_tunnel_interface_id
  *    [in] attr - attribute
  *
  * Return Values:
  *    SAI_STATUS_SUCCESS on success
  *    Failure status code on error
  */
-typedef sai_status_t (*sai_set_tunnel_operator_attribute_fn)(
-    _In_ sai_object_id_t tunnel_operator_id,
+typedef sai_status_t (*sai_set_l3_tunnel_interface_attribute_fn)(
+    _In_ sai_object_id_t l3_tunnel_interface_id,
     _In_ const sai_attribute_t *attr
     );
-</code>
-</pre>
+~~~
 
-#### Get Tunnel Operator Attributes ####
+#### Get L3 Tunnel Interface Attributes ####
 
-*sai_get_tunnel_operator_attribute_fn* defines the interface to get attributes for the tunnel operator.
+*sai_get_l3_tunnel_interface_attribute_fn* defines the interface to get attributes for the l3 tunnel interface.
 
-<pre>
-<code>
+~~~cpp
 /*
  * Routine Description:
- *    Get tunnel operator attribute
+ *    Get l3 tunnel interface attribute
  *
  * Arguments:
- *    [in] sai_object_id_t - tunnel_operator_id
+ *    [in] sai_object_id_t - l3_tunnel_interface_id
  *    [in] attr_count - number of attributes
  *    [inout] attr_list - array of attributes
  *
@@ -254,35 +306,30 @@ typedef sai_status_t (*sai_set_tunnel_operator_attribute_fn)(
  *    SAI_STATUS_SUCCESS on success
  *    Failure status code on error
  */
-typedef sai_status_t (*sai_get_tunnel_operator_attribute_fn)(
-    _In_ sai_object_id_t tunnel_operator_id,
+typedef sai_status_t (*sai_get_l3_tunnel_interface_attribute_fn)(
+    _In_ sai_object_id_t l3_tunnel_interface_id,
     _In_ uint32_t attr_count,
     _Inout_ sai_attribute_t *attr_list
     );
-</code>
-</pre>
+~~~
 
 #### Tunnel API Table ####
 
 *sai_tunnel_api_t* defines the tunnel API table.
 
-<pre>
-<code>
+~~~cpp
 /*
- *  Tunnel methods table retrieved with sai_api_query()
+ *  L3 tunnel methods table retrieved with sai_api_query()
  */
-typedef struct _sai_tunnel_api_t
+typedef struct _sai_l3_tunnel_api_t
 {
-    sai_create_tunnel_operator_fn        create_tunnel_initiator;
-    sai_remove_tunnel_operator_fn        remove_tunnel_initiator;
-    sai_create_tunnel_operator_fn        create_tunnel_terminator;
-    sai_remove_tunnel_operator_fn        remove_tunnel_terminator;
-    sai_set_tunnel_operator_attribute_fn set_tunnel_operator_attribute;
-    sai_get_tunnel_operator_attribute_fn get_tunnel_operator_attribute;
+    sai_create_l3_tunnel_interface_fn        create_l3_tunnel_egress_interface;
+    sai_remove_l3_tunnel_interface_fn        remove_l3_tunnel_egress_interface;
+    sai_set_l3_tunnel_interface_attribute_fn set_l3_tunnel_egress_interface_attribute;
+    sai_get_l3_tunnel_interface_attribute_fn get_l3_tunnel_egress_interface_attribute;
 
 } sai_tunnel_api_t;
-</code>
-</pre>
+~~~
 
 
 ## Example ##
@@ -291,31 +338,9 @@ typedef struct _sai_tunnel_api_t
 
 The following code shows how to get the tunnel API table:
 
-<pre>
-<code>
-sai_tunnel_api_t* sai_tunnel_api;
-sai_api_query(SAI_API_TUNNEL, (void**)&sai_tunnel_api);
-</code>
-</pre>
-
-### Create A Tunnel Initiator ###
-
-The following code shows how to create a tunnel initiator:
-
-<pre>
-<code>
-sai_object_id_t tunnel_initiator_id;
-sai_attribute_t tunnel_attrs[4];
-tunnel_attrs[0].id = (sai_attr_id_t)SAI_TUNNEL_ATTR_INTF;
-tunnel_attrs[0].value.ipaddr = intf;
-tunnel_attrs[1].id = (sai_attr_id_t)SAI_TUNNEL_ATTR_TYPE;
-tunnel_attrs[1].value.u32 = (sai_uint32_t)SAI_TUNNEL_IPv4;
-tunnel_attrs[2].id = (sai_attr_id_t)SAI_TUNNEL_ATTR_SIP;
-tunnel_attrs[2].value.ipaddr = ntohl(sip.addr());
-tunnel_attrs[3].id = (sai_attr_id_t)SAI_TUNNEL_ATTR_DIP;
-tunnel_attrs[3].value.ipaddr = ntohl(dip.addr());
-
-if (sai_tunnel_api->create_tunnel_initiator(&tunnel_initiator_id, tunnel_attrs, 4) == SAI_STATUS_SUCCESS))
+~~~cpp
+sai_l3_tunnel_api_t* sai_l3_tunnel_api;
+if (sai_api_query(SAI_API_L3_TUNNEL, (void**)&sai_l3_tunnel_api) == SAI_STATUS_SUCCESS)
 {
     // Succeeded...
 }
@@ -323,25 +348,25 @@ else
 {
     // Failed...
 }
-</code>
-</pre>
+~~~
 
-### Create A Tunnel Terminator ###
+### Create An L3 Tunnel Egress Interface ###
 
-The following code shows how to create a tunnel terminator:
+The following code shows how to create a l3 tunnel egress interface:
 
-<pre>
-<code>
-sai_object_id_t tunnel_terminator_id;
-sai_attribute_t tunnel_attrs[3];
-tunnel_attrs[0].id = (sai_attr_id_t)SAI_TUNNEL_ATTR_TYPE;
-tunnel_attrs[0].value.u32 = (sai_uint32_t)SAI_TUNNEL_IPv4;
-tunnel_attrs[1].id = (sai_attr_id_t)SAI_TUNNEL_ATTR_SIP;
-tunnel_attrs[1].value.ipaddr = ntohl(sip.addr());
-tunnel_attrs[2].id = (sai_attr_id_t)SAI_TUNNEL_ATTR_DIP;
-tunnel_attrs[2].value.ipaddr = ntohl(dip.addr());
+~~~cpp
+sai_object_id_t l3_tunnel_egress_interface_id;
+sai_attribute_t l3_tunnel_egress_interface_attrs[4];
+l3_tunnel_egress_interface_attrs[0].id = (sai_attr_id_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_INTF;
+l3_tunnel_egress_interface_attrs[0].value.intf = router_intf; // The router interface to bind.
+l3_tunnel_egress_interface_attrs[1].id = (sai_attr_id_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_TYPE;
+l3_tunnel_egress_interface_attrs[1].value.u64 = (sai_uint64_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_IPV4; // This is a IPv4 tunnel.
+l3_tunnel_egress_interface_attrs[2].id = (sai_attr_id_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_SIP;
+l3_tunnel_egress_interface_attrs[2].value.ipaddr = ntohl(sip.addr()); // The source IP address of the outer IP header.
+l3_tunnel_egress_interface_attrs[3].id = (sai_attr_id_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_DIP;
+l3_tunnel_egress_interface_attrs[3].value.ipaddr = ntohl(dip.addr()); // The destination IP address of the outer IP header.
 
-if (sai_tunnel_api->create_tunnel_terminator(&tunnel_terminator_id, tunnel_attrs, 3) == SAI_STATUS_SUCCESS))
+if (sai_tunnel_api->create_l3_tunnel_egress_interface(&l3_tunnel_egress_interface_id, 4, l3_tunnel_egress_interface_attrs) == SAI_STATUS_SUCCESS)
 {
     // Succeeded...
 }
@@ -349,16 +374,14 @@ else
 {
     // Failed...
 }
-</code>
-</pre>
+~~~
 
-### Remove A Tunnel Initiator And Terminator ###
+### Remove An L3 Tunnel Egress Interface ###
 
-The following code shows how to remove a tunnel initiator and terminator:
+The following code shows how to remove a l3 tunnel egress interface:
 
-<pre>
-<code>
-if (sai_tunnel_api->remove_tunnel_initiator(tunnel_initiator_id) == SAI_STATUS_SUCCESS))
+~~~cpp
+if (sai_tunnel_api->remove_l3_tunnel_egress_interface(l3_tunnel_egress_interface_id) == SAI_STATUS_SUCCESS)
 {
     // Succeeded...
 }
@@ -366,8 +389,18 @@ else
 {
     // Failed...
 }
+~~~
 
-if (sai_tunnel_api->remove_tunnel_terminator(tunnel_terminator_id) == SAI_STATUS_SUCCESS))
+### Set L3 Tunnel Egress Interface Attributes ###
+
+The following code shows how to set attributes to the tunnel interface:
+
+~~~cpp
+sai_attribute_t l3_tunnel_egress_interface_attr;
+l3_tunnel_egress_interface_attr.id = (sai_attr_id_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_TTL;
+l3_tunnel_egress_interface_attr.value.u8 = 128;
+
+if (sai_tunnel_api->set_l3_tunnel_egress_interface_attribute(&tunnel_interface_id, &l3_tunnel_egress_interface_attr) == SAI_STATUS_SUCCESS)
 {
     // Succeeded...
 }
@@ -375,22 +408,18 @@ else
 {
     // Failed...
 }
-</code>
-</pre>
+~~~
 
-### Set Tunnel Operator Attributes ###
+### Get L3 Tunnel Egress Interface Attributes ###
 
-The following code shows how to set attributes to the tunnel operator:
+The following code shows how to get attributes to the tunnel interface:
 
-<pre>
-<code>
-sai_attribute_t tunnel_attrs[2];
-tunnel_attrs[0].id = (sai_attr_id_t)SAI_TUNNEL_OPERATOR_ATTR_TTL;
-tunnel_attrs[0].value.u8 = 128;
-tunnel_attrs[1].id = (sai_attr_id_t)SAI_TUNNEL_OPERATOR_ATTR_DSCP;
-tunnel_attrs[1].value.u8 = 1;
+~~~cpp
+sai_attribute_t l3_tunnel_egress_interface_attrs[2];
+l3_tunnel_egress_interface_attrs[0].id = (sai_attr_id_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_TTL;
+l3_tunnel_egress_interface_attrs[1].id = (sai_attr_id_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_DSCP;
 
-if (sai_tunnel_api->set_tunnel_operator_attribute(&tunnel_operator_id, tunnel_attrs, 2) == SAI_STATUS_SUCCESS))
+if (sai_tunnel_api->get_l3_tunnel_egress_interface_attribute(&tunnel_interface_id, 2, l3_tunnel_egress_interface_attrs) == SAI_STATUS_SUCCESS)
 {
     // Succeeded...
 }
@@ -398,26 +427,62 @@ else
 {
     // Failed...
 }
-</code>
-</pre>
+~~~
 
-### Get Tunnel Operator Attributes ###
+### Set Up A Route To Forward A Prefix's Traffic To A L3 Tunnel ###
 
-The following code shows how to get attributes to the tunnel operator:
+The following code shows how to set up a route to forward a prefix to a l3 tunnel:
 
-<pre>
-<code>
-sai_attribute_t tunnel_attrs[2];
-tunnel_attrs[0].id = (sai_attr_id_t)SAI_TUNNEL_OPERATOR_ATTR_TTL;
-tunnel_attrs[1].id = (sai_attr_id_t)SAI_TUNNEL_OPERATOR_ATTR_DSCP;
+~~~cpp
+// Step 1: create a l3 tunnel egress interface.
+sai_object_id_t l3_tunnel_egress_interface_id;
+sai_attribute_t l3_tunnel_egress_interface_attrs[4];
+l3_tunnel_egress_interface_attrs[0].id = (sai_attr_id_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_INTF;
+l3_tunnel_egress_interface_attrs[0].value.intf = router_intf; // The router interface to bind.
+l3_tunnel_egress_interface_attrs[1].id = (sai_attr_id_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_TYPE;
+l3_tunnel_egress_interface_attrs[1].value.u64 = (sai_uint64_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_IPV4; // This is a IPv4 tunnel.
+l3_tunnel_egress_interface_attrs[2].id = (sai_attr_id_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_SIP;
+l3_tunnel_egress_interface_attrs[2].value.ipaddr = ntohl(sip.addr()); // The source IP address of the outer IP header.
+l3_tunnel_egress_interface_attrs[3].id = (sai_attr_id_t)SAI_L3_TUNNEL_EGRESS_INTERFACE_ATTR_DIP;
+l3_tunnel_egress_interface_attrs[3].value.ipaddr = ntohl(dip.addr()); // The destination IP address of the outer IP header.
 
-if (sai_tunnel_api->get_tunnel_operator_attribute(&tunnel_operator_id, tunnel_attrs, 2) == SAI_STATUS_SUCCESS))
-{
-    // Succeeded...
-}
-else
+if (sai_tunnel_api->create_l3_tunnel_egress_interface(&l3_tunnel_egress_interface_id, 4, l3_tunnel_egress_interface_attrs) != SAI_STATUS_SUCCESS)
 {
     // Failed...
+    return false;
 }
-</code>
-</pre>
+
+// Step 2: create a next hop.
+sai_next_hop_id_t next_hop_id;
+sai_attribute_t next_hop_attrs[2];
+next_hop_attrs[0].id = SAI_NEXT_HOP_ATTR_IP;
+next_hop_attrs[0].value.ipaddr.addr_family= SAI_IP_ADDR_FAMILY_IPV4;
+next_hop_attrs[0].value.ipaddr.addr.ip4 = next_hop_ip.addr(); // The next hop IP address.
+next_hop_attrs[1].id = SAI_NEXT_HOP_ATTR_L3_EGRESS_INTERFACE_ID;
+next_hop_attrs[1].value.u64 = l3_tunnel_egress_interface_id; // The l3 tunnel egress interface created in step 1.
+if (sai_next_hop_api->create_next_hop(&next_hop_id, 2, next_hop_attrs) != SAI_STATUS_SUCCESS)
+{
+    // Failed...
+    return false;
+}
+
+// Step 3: create a route entry.
+sai_unicast_route_entry_t unicast_route_entry;
+unicast_route_entry.vr_id = virtual_router_id;
+unicast_route_entry.destination.addr.ip4 = prefixIp; // The target prefix IP.
+unicast_route_entry.destination.mask.ip4 = prefixMask; // The target prefix mask.
+
+sai_attribute_t route_attr;
+route_attr.id = SAI_ROUTE_ATTR_NEXT_HOP_ID;
+route_attr.value.u64 = next_hop_id; // The next hop id created in step 2.
+
+if (sai_route_api->create_route(&unicast_route_entry, 1, &route_attr) != SAI_STATUS_SUCCESS)
+{
+    // Failed...
+    return false;
+}
+
+// Succeeded...
+~~~
+
+
