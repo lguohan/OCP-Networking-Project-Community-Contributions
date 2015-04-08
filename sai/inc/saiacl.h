@@ -200,7 +200,7 @@ typedef enum _sai_acl_table_attr_t
     SAI_ACL_TABLE_ATTR_FIELD_IP_FRAG,
 
     /* Class-of-Service (Traffic Class) */
-    SAI_ACL_TABLE_ATTR_FIELD_COS,
+    SAI_ACL_TABLE_ATTR_FIELD_TC,
 
     /* -- */
 
@@ -315,13 +315,13 @@ typedef enum _sai_acl_entry_attr_t
     /* Ip Frag [sai_acl_ip_frag_t] */
     SAI_ACL_ENTRY_ATTR_FIELD_IP_FRAG,
 
-    /* Class-of-Service (Traffic Class) */
-    SAI_ACL_ENTRY_ATTR_FIELD_COS,
+    /* Class-of-Service (Traffic Class) [sai_cos_t] */
+    SAI_ACL_ENTRY_ATTR_FIELD_TC,
 
  
     /* Actions [pointer to sai_acl_action_data_t] */
  
-    /* Forward Normally */
+    /* Forward Normally, override any previous drop decision */
     SAI_ACL_ENTRY_ATTR_ACTION_FORWARD = 0x00002000,
 
     /* Redirect Packet */
@@ -357,8 +357,8 @@ typedef enum _sai_acl_entry_attr_t
     /* Decrement TTL */
     SAI_ACL_ENTRY_ATTR_ACTION_DECREMENT_TTL,
 
-    /* Set Class-of-Service (Traffic Class) */
-    SAI_ACL_ENTRY_ATTR_ACTION_SET_COS,
+    /* Set Class-of-Service (Traffic Class) [sai_cos_t] */
+    SAI_ACL_ENTRY_ATTR_ACTION_SET_TC,
 
     /* Set Packet Inner Vlan-Id */
     SAI_ACL_ENTRY_ATTR_ACTION_SET_INNER_VLAN_ID,
