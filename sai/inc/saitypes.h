@@ -202,29 +202,15 @@ typedef struct _sai_ip_prefix_t {
     } mask;
 } sai_ip_prefix_t;
 
-typedef enum _sai_acl_match_mode_t 
-{
-    /* Field match is disbled. 
-     * Used for disable a match field in an installed acl entry */
-    SAI_ACL_MATCH_DISABLE, 
-
-    /* Field mode is determined by the field type */
-    SAI_ACL_MATCH_AUTO,
-
-    /* Field mode is AND with mask (<data> & <mask> == <field>) */
-    SAI_ACL_MATCH_MASK
-
-} sai_acl_match_mode_t;
-
 /*
  * Defines a single ACL filter
  */
 typedef struct _sai_acl_field_data_t
 {
     /*
-     * Field match mode
-     */
-    sai_acl_match_mode_t mode;
+     * match enable/disable
+     */ 
+    bool enable;
 
     /*
      * Field match mask
@@ -316,7 +302,7 @@ typedef union {
     sai_s32_list_t s32list;
     sai_vlan_list_t vlanlist;
     sai_acl_field_data_t aclfield;
-    sai_acl_action_data_t acldata;
+    sai_acl_action_data_t aclaction;
     sai_port_breakout_t portbreakout;
 } sai_attribute_value_t;
 
