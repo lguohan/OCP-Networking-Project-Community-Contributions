@@ -13,7 +13,7 @@ SAI UDF (User Defined Field) Proposal
 
 ## Overview ##
 
-UDF (User Defined Field) is a mechanism that enables users to extract customized fields of the packet. UDF is defined based on a offset and a mask. The length of UDF is 16bit.
+UDF (User Defined Field) is a mechanism that enables users to extract customized fields of the packet. In SAI, UDF contains two parts, the matching rules and the extracting rules. The matching rules basically specify what packets can be used for this UDF. Once a packet matches the rules of a UDF, UDF uses its extracting rules to extract the data field of the data packet. 
 
 ## Specification ##
 
@@ -25,14 +25,14 @@ A new type **SAI_API_UDF** is added.
 /*
 *
 * Defined API sets have assigned ID's. If specific api method table changes
-* in any way (method signature, number of methods), a new ID needs to be
-* created (e.g. VLAN2) and old API still may need to be supported for
+* in any way (method signature, number of methods), a new ID needs to be 
+* created (e.g. VLAN2) and old API still may need to be supported for 
 * compatibility with older adapter hosts.
 *
 */
 typedef enum _sai_api_t
-{
-    SAI_API_UNSPECIFIED      =  0,
+{    
+    SAI_API_UNSPECIFIED      =  0, 
     SAI_API_SWITCH           =  1,  /* sai_switch_api_t */
     SAI_API_PORT             =  2,  /* sai_port_api_t */
     SAI_API_FDB              =  3,  /* sai_fdb_api_t */
@@ -46,24 +46,61 @@ typedef enum _sai_api_t
     SAI_API_QOS              = 11,  /* sai_qos_api_t */
     SAI_API_ACL              = 12,  /* sai_acl_api_t */
     SAI_API_HOST_INTERFACE   = 13,  /* sai_host_interface_api_t */
-    SAI_API_L3_TUNNEL        = 14,  /* sai_l3_tunnel_api_t */
-    SAI_API_UDF              = 15,  /* sai_udf_api_t */
+    SAI_API_UDF              = 14,  /* sai_udf_api_t */
 } sai_api_t;
 ~~~
 
 
 ### New Header saiudf.h ###
 
-*sai_udf_attr_t* defines the UDF attributes.
+#### UDF Type ####
 
-* SAI_UDF_ATTR_OFFSET
-    * Property: MANDATORY_ON_CREATE | CREATE_AND_SET
-    * Value Type: uint16_t
+*sai\_udf\_type\_t* defines the UDF type. Currently, there are two types supported, SAI\_UDF\_GENERIC and SAI\_UDF\_HASH. For hash UDFs, SAI\_UDF\_HASH must be specified. For other cases, SAI\_UDF\_GENERIC should be used, which is the default case.
+
+~~~cpp
+/*
+ * Sai UDF type.
+ */
+typedef enum _sai_udf_type_t
+{
+    /* Sai generic UDF */
+    SAI_UDF_GENERIC,
+
+    /* Sai UDF for hash */
+    SAI_UDF_HASH,
+
+} sai_udf_type_t;
+~~~
+
+#### UDF Attributes ####
+
+*sai\_udf\_attr\_t* defines the UDF attributes. SAI\_UDF\_ATTR\_MATCH\_L2\_TYPE, SAI\_UDF\_ATTR\_MATCH\_L3\_TYPE and SAI\_UDF\_ATTR\_MATCH\_GRE\_TYPE define the matching rule. SAI\_UDF\_ATTR\_OFFSET and SAI\_UDF\_ATTR\_MASK defines the extracting rule.
+
+* SAI\_UDF\_ATTR\_TYPE
+    * Property: CREATE\_ONLY
+    * Value Type: uint16\_t
+    * Comment: UDF attribute type
+* SAI\_UDF\_ATTR\_MATCH\_L2\_TYPE
+    * Property: CREATE\_ONLY
+    * Value Type: sai\_acl\_field\_data\_t(uint16\_t)
+    * Comment: UDF L2 match rule
+* SAI\_UDF\_ATTR\_MATCH\_L3\_TYPE
+    * Property: CREATE\_ONLY
+    * Value Type: sai\_acl\_field\_data\_t(uint16\_t)
+    * Comment: UDF L3 match rule
+* SAI\_UDF\_ATTR\_MATCH\_GRE\_TYPE
+    * Property: CREATE\_ONLY
+    * Value Type: sai\_acl\_field\_data\_t(uint16\_t)
+    * Comment: UDF GRE match rule
+* SAI\_UDF\_ATTR\_OFFSET
+    * Property: MANDATORY\_ON\_CREATE | CREATE\_AND\_SET
+    * Value Type: uint16\_t
     * Comment: UDF offset
-* SAI_UDF_ATTR_MASK
-    * Property: MANDATORY_ON_CREATE | CREATE_AND_SET
-    * Value Type: uint16_t
+* SAI\_UDF\_ATTR\_MASK
+    * Property: MANDATORY\_ON\_CREATE | CREATE\_AND\_SET
+    * Value Type: uint16\_t
     * Comment: UDF mask
+
 
 ~~~cpp
 /*
@@ -75,11 +112,23 @@ typedef enum _sai_udf_attr_t
 
     /* READ-WRITE */
 
-    /* UDF offset [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
+    /* UDF type [sai_udf_type_t] (CREATE_ONLY) (default to SAI_UDF_GENERIC) */
+    SAI_UDF_ATTR_TYPE,
+
+    /* UDF L2 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to 0x0800, Ethernet) */
+    SAI_UDF_ATTR_MATCH_L2_TYPE,
+
+    /* UDF L3 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to 0x0600, TCP) */
+    SAI_UDF_ATTR_MATCH_L3_TYPE,
+
+    /* UDF GRE match rule [sai_acl_field_data_t(sai_udf_type_t)] (CREATE_ONLY) (default to 0) */
+    SAI_UDF_ATTR_MATCH_GRE_TYPE,
+
+    /* UDF byte offset [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
     SAI_UDF_ATTR_OFFSET,
 
-    /* UDF mask [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
-    SAI_UDF_ATTR_MASK,
+    /* UDF byte length [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
+    SAI_UDF_ATTR_LENGTH,
 
 } sai_udf_attr_t;
 ~~~
@@ -217,17 +266,21 @@ else
 
 ### Create A UDF Interface ###
 
-The following code shows how to create a UDF:
+The following code shows how to create a UDF to extract the TCP flags:
 
 ~~~cpp
 sai_object_id_t udf_id;
-sai_attribute_t udf_attrs[2];
-udf_attrs[0].id = (sai_attr_id_t)SAI_UDF_ATTR_OFFSET;
-udf_attrs[0].value.u16 = 0x1c;
-udf_attrs[1].id = (sai_attr_id_t)SAI_UDF_ATTR_MASK;
-udf_attrs[1].value.u16 = 0xffff;
+sai_attribute_t udf_attrs[4];
+udf_attrs[0].id = (sai_attr_id_t)SAI_UDF_ATTR_MATCH_L2_TYPE;
+udf_attrs[0].value.u16 = 0x0800;
+udf_attrs[1].id = (sai_attr_id_t)SAI_UDF_ATTR_MATCH_L3_TYPE;
+udf_attrs[1].value.u16 = 0x0600;
+udf_attrs[2].id = (sai_attr_id_t)SAI_UDF_ATTR_OFFSET;
+udf_attrs[2].value.u16 = 47;
+udf_attrs[3].id = (sai_attr_id_t)SAI_UDF_ATTR_LENGTH;
+udf_attrs[3].value.u16 = 1;
 
-if (sai_udf_api->create_udf(&udf_id, 2, udf_attrs) == SAI_STATUS_SUCCESS)
+if (sai_udf_api->create_udf(&udf_id, 4, udf_attrs) == SAI_STATUS_SUCCESS)
 {
     // Succeeded...
 }
@@ -258,8 +311,8 @@ The following code shows how to set attributes to the UDF:
 
 ~~~cpp
 sai_attribute_t udf_attr;
-udf_attrs[0].id = (sai_attr_id_t)SAI_UDF_ATTR_OFFSET;
-udf_attrs[0].value.u16 = 0x1e;
+udf_attr.id = (sai_attr_id_t)SAI_UDF_ATTR_OFFSET;
+udf_attr.value.u16 = 47;
 
 if (sai_udf_api->set_udf_attribute(&udf_id, &udf_attr) == SAI_STATUS_SUCCESS)
 {

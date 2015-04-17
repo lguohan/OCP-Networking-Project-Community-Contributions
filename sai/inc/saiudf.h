@@ -33,6 +33,19 @@
 #include <saitypes.h>
 
 /*
+ * Sai UDF type.
+ */
+typedef enum _sai_udf_type_t
+{
+    /* Sai generic UDF */
+    SAI_UDF_GENERIC,
+
+    /* Sai UDF for hash */
+    SAI_UDF_HASH,
+
+} sai_udf_type_t;
+
+/*
  *  Attribute id for UDF
  */
 typedef enum _sai_udf_attr_t
@@ -41,11 +54,23 @@ typedef enum _sai_udf_attr_t
 
     /* READ-WRITE */
 
-    /* UDF offset [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
+    /* UDF type [sai_udf_type_t] (CREATE_ONLY) (default to SAI_UDF_GENERIC) */
+    SAI_UDF_ATTR_TYPE,
+
+    /* UDF L2 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
+    SAI_UDF_ATTR_MATCH_L2_TYPE,
+
+    /* UDF L3 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
+    SAI_UDF_ATTR_MATCH_L3_TYPE,
+
+    /* UDF GRE match rule [sai_acl_field_data_t(sai_udf_type_t)] (CREATE_ONLY) (default to None) */
+    SAI_UDF_ATTR_MATCH_GRE_TYPE,
+
+    /* UDF byte offset [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
     SAI_UDF_ATTR_OFFSET,
 
-    /* UDF mask [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
-    SAI_UDF_ATTR_MASK,
+    /* UDF byte length [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
+    SAI_UDF_ATTR_LENGTH,
 
 } sai_udf_attr_t;
 
