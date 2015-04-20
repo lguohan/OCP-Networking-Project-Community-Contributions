@@ -77,6 +77,7 @@ typedef enum _sai_api_t
     SAI_API_SAMPLEPACKET     = 15,  /* sai_samplepacket_api_t */
     SAI_API_STP              = 16,  /* sai_stp_api_t */
     SAI_API_LAG              = 17,  /* sai_lag_api_t */
+    SAI_API_HASH             = 18,  /* sai_hash_api_t */
 } sai_api_t;
 
 typedef enum _sai_log_level_t
