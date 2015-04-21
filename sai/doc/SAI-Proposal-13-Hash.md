@@ -31,7 +31,7 @@ For the LAG group, it has  the following attributes:
 
 Default hash objects for these attributes should be created when the switch is initialized. Users could override them with their own hash object later.
 
-Sai hash object is comprised of three parts, hash seed, hash fields, hash algorithm. Sai hash object takes two steps to achieve its goal:
+Sai hash object takes two steps to achieve its goal:
 
 1. Extract certain fields from the packet.
 2. Compute the hash value based on the hash algorithm.
@@ -86,7 +86,7 @@ A few hash related attributes are added into sai\_switch\_attr\_t.
 
 ~~~cpp
 /*
-*  Attribute Id in sai_set_switch_attribute() and 
+*  Attribute Id in sai_set_switch_attribute() and
 *  sai_get_switch_attribute() calls
 */
 typedef enum _sai_switch_attr_t
@@ -98,29 +98,35 @@ typedef enum _sai_switch_attr_t
 
     ...
 
-    /* Sai default hash algorithm [sai_hash_algorithm] (default to SAI_HASH_ALGORITHM_CRC) */
-    SAI_DEFAULT_HASH_ALGORITHM,
+    /* Sai ECMP default hash algorithm [sai_hash_algorithm] (default to SAI_HASH_ALGORITHM_CRC) */
+    SAI_SWITCH_ATTR_DEFAULT_HASH_ALGORITHM,
 
-    /* Sai default hash seed [uint32_t] (default to 0) */
-    SAI_DEFAULT_HASH_SEED,
+    /* Sai ECMP default hash seed [uint32_t] (default to 0) */
+    SAI_SWITCH_ATTR_DEFAULT_HASH_SEED,
+
+    /* Sai LAG default hash algorithm [sai_hash_algorithm] (default to SAI_HASH_ALGORITHM_CRC) */
+    SAI_SWITCH_ATTR_DEFAULT_HASH_ALGORITHM,
+
+    /* Sai LAG default hash seed [uint32_t] (default to 0) */
+    SAI_SWITCH_ATTR_DEFAULT_HASH_SEED,
 
     /* The hash object for packets going throught ECMP [sai_object_id_t] */
-    SAI_ECMP_HASH,
+    SAI_SWITCH_ATTR_ECMP_HASH,
 
     /* The hash object for IPv4 packets going throught ECMP [sai_object_id_t] */
-    SAI_ECMP_IPV4_HASH,
+    SAI_SWITCH_ATTR_ECMP_HASH_IPV4,
 
     /* The hash object for IPv4 in IPv4 packets going throught ECMP [sai_object_id_t] */
-    SAI_ECMP_IPV4_IN_IPV4_HASH,
+    SAI_SWITCH_ATTR_ECMP_HASH_IPV4_IN_IPV4,
 
     /* The hash object for packets going throught LAG [sai_object_id_t] */
-    SAI_LAG_HASH,
+    SAI_SWITCH_ATTR_LAG_HASH,
 
     /* The hash object for IPv4 packets going throught LAG [sai_object_id_t] */
-    SAI_LAG_IPV4_HASH,
+    SAI_SWITCH_ATTR_LAG_HASH_IPV4,
 
     /* The hash object for IPv4 in IPv4 packets going throught LAG [sai_object_id_t] */
-    SAI_LAG_IPV4_IN_IPV4_HASH,
+    SAI_SWITCH_ATTR_LAG_HASH_IPV4_IN_IPV4,
 
     ...
 
@@ -187,7 +193,7 @@ typedef enum _sai_native_hash_field
 
     /* Sai native hash field source port*/
     SAI_NATIVE_HASH_FIELD_IN_PORT,
-    
+
     /* Sai native hash field destination port*/
     SAI_NATIVE_HASH_FIELD_OUT_PORT,
 
@@ -196,14 +202,6 @@ typedef enum _sai_native_hash_field
 
 *sai_hash_attr_t* defines the hash attributes.
 
-* SAI\_HASH\_ALGORITHM
-    * Property: CREATE\_AND\_SET
-    * Value Type: sai\_hash\_algorithm
-    * Comment: Sai hash algorithm
-* SAI\_HASH\_SEED,
-    * Property: CREATE\_AND\_SET
-    * Value Type: uint32\_t
-    * Comment: Sai hash seed
 * SAI\_HASH\_NATIVE\_FIELDS,
     * Property: CREATE\_AND\_SET
     * Value Type: sai\_u32\_list\_t(sai\_native\_hash\_field)
@@ -222,12 +220,6 @@ typedef enum _sai_hash_attr_t
     /* READ-ONLY */
 
     /* READ-WRITE */
-
-    /* Sai hash algorithm [sai_hash_algorithm] (CREATE_AND_SET) (default to the value for SAI_HASH_DEFAULT_ALGORITHM in saiswitch) */
-    SAI_HASH_ALGORITHM,
-
-    /* Sai hash seed [uint32_t] (CREATE_AND_SET) (default to the value for SAI_DEFAULT_HASH_SEED in saiswitch) */
-    SAI_HASH_SEED,
 
     /* Sai hash native fields [sai_u32_list_t(sai_native_hash_field)] (CREATE_AND_SET) (default to an empty list) */
     SAI_HASH_NATIVE_FIELDS,
@@ -442,8 +434,12 @@ else
 The following code shows how to get attributes to the Hash:
 
 ~~~cpp
+uint32_t hash_native_fields[4];
+
 sai_attribute_t hash_attr;
 hash_attr.id = (sai_attr_id_t)SAI_HASH_NATIVE_FIELDS;
+hash_attr.value.count = 4;
+hash_attr.value.list = hash_native_fields;
 
 if (sai_hash_api->get_hash_attribute(hash_id, 1, &hash_attr) == SAI_STATUS_SUCCESS)
 {
@@ -474,5 +470,3 @@ else
     // Failed...
 }
 ~~~
-
-

@@ -97,12 +97,6 @@ typedef enum _sai_hash_attr_t
 
     /* READ-WRITE */
 
-    /* Sai hash algorithm [sai_hash_algorithm] (CREATE_AND_SET) (default to the value for SAI_HASH_DEFAULT_ALGORITHM in saiswitch) */
-    SAI_HASH_ALGORITHM,
-
-    /* Sai hash seed [uint32_t] (CREATE_AND_SET) (default to the value for SAI_DEFAULT_HASH_SEED in saiswitch) */
-    SAI_HASH_SEED,
-
     /* Sai hash native fields [sai_u32_list_t(sai_native_hash_field)] (CREATE_AND_SET) (default to an empty list) */
     SAI_HASH_NATIVE_FIELDS,
 

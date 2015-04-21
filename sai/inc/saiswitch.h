@@ -182,29 +182,35 @@ typedef enum _sai_switch_attr_t
 
     SAI_SWITCH_ATTR_FDB_MULTICAST_MISS_ACTION,
 
-    /* Sai default hash algorithm [sai_hash_algorithm] (default to SAI_HASH_ALGORITHM_CRC) */
-    SAI_DEFAULT_HASH_ALGORITHM,
+    /* Sai ECMP default hash algorithm [sai_hash_algorithm] (default to SAI_HASH_ALGORITHM_CRC) */
+    SAI_SWITCH_ATTR_DEFAULT_HASH_ALGORITHM,
 
-    /* Sai default hash seed [uint32_t] (default to 0) */
-    SAI_DEFAULT_HASH_SEED,
+    /* Sai ECMP default hash seed [uint32_t] (default to 0) */
+    SAI_SWITCH_ATTR_DEFAULT_HASH_SEED,
+
+    /* Sai LAG default hash algorithm [sai_hash_algorithm] (default to SAI_HASH_ALGORITHM_CRC) */
+    SAI_SWITCH_ATTR_DEFAULT_HASH_ALGORITHM,
+
+    /* Sai LAG default hash seed [uint32_t] (default to 0) */
+    SAI_SWITCH_ATTR_DEFAULT_HASH_SEED,
 
     /* The hash object for packets going throught ECMP [sai_object_id_t] */
-    SAI_ECMP_HASH,
+    SAI_SWITCH_ATTR_ECMP_HASH,
 
     /* The hash object for IPv4 packets going throught ECMP [sai_object_id_t] */
-    SAI_ECMP_IPV4_HASH,
+    SAI_SWITCH_ATTR_ECMP_HASH_IPV4,
 
     /* The hash object for IPv4 in IPv4 packets going throught ECMP [sai_object_id_t] */
-    SAI_ECMP_IPV4_IN_IPV4_HASH,
+    SAI_SWITCH_ATTR_ECMP_HASH_IPV4_IN_IPV4,
 
     /* The hash object for packets going throught LAG [sai_object_id_t] */
-    SAI_LAG_HASH,
+    SAI_SWITCH_ATTR_LAG_HASH,
 
     /* The hash object for IPv4 packets going throught LAG [sai_object_id_t] */
-    SAI_LAG_IPV4_HASH,
+    SAI_SWITCH_ATTR_LAG_HASH_IPV4,
 
     /* The hash object for IPv4 in IPv4 packets going throught LAG [sai_object_id_t] */
-    SAI_LAG_IPV4_IN_IPV4_HASH,
+    SAI_SWITCH_ATTR_LAG_HASH_IPV4_IN_IPV4,
 
     /* ECMP max number of paths per group [uint32_t]
        (default to 64) */
