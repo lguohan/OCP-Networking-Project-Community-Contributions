@@ -46,6 +46,22 @@ typedef enum _sai_udf_type_t
 } sai_udf_type_t;
 
 /*
+ * Sai UDF base
+ */
+typedef enum _sai_udf_base_t
+{
+    /* Sai UDF base L2 */
+    SAI_UDF_BASE_L2,
+
+    /* Sai UDF base L3 */
+    SAI_UDF_BASE_L3,
+
+    /* Sai UDF base L4 */
+    SAI_UDF_BASE_L4,
+
+} sai_udf_base_t;
+
+/*
  *  Attribute id for UDF
  */
 typedef enum _sai_udf_attr_t
@@ -63,8 +79,11 @@ typedef enum _sai_udf_attr_t
     /* UDF L3 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
     SAI_UDF_ATTR_MATCH_L3_TYPE,
 
-    /* UDF GRE match rule [sai_acl_field_data_t(sai_udf_type_t)] (CREATE_ONLY) (default to None) */
+    /* UDF GRE match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
     SAI_UDF_ATTR_MATCH_GRE_TYPE,
+
+    /* UDF base [sai_udf_base_t] (CREATE_AND_SET) (default to SAI_UDF_BASE_L2) */
+    SAI_UDF_ATTR_BASE,
 
     /* UDF byte offset [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
     SAI_UDF_ATTR_OFFSET,

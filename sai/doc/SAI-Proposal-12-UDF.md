@@ -31,7 +31,7 @@ A new type **SAI_API_UDF** is added.
 *
 */
 typedef enum _sai_api_t
-{    
+{
     SAI_API_UNSPECIFIED      =  0, 
     SAI_API_SWITCH           =  1,  /* sai_switch_api_t */
     SAI_API_PORT             =  2,  /* sai_port_api_t */
@@ -72,6 +72,28 @@ typedef enum _sai_udf_type_t
 } sai_udf_type_t;
 ~~~
 
+#### UDF Base ####
+
+*sai\_udf\_base\_t* defines the base of the UDF. Valid options are SAI\_UDF\_BASE\_L2, SAI\_UDF\_BASE\_L3, SAI\_UDF\_BASE\_L4.
+
+~~~cpp
+/*
+ * Sai UDF base
+ */
+typedef enum _sai_udf_base_t
+{
+    /* Sai UDF base L2 */
+    SAI_UDF_BASE_L2,
+
+    /* Sai UDF base L3 */
+    SAI_UDF_BASE_L3,
+
+    /* Sai UDF base L4 */
+    SAI_UDF_BASE_L4,
+
+} sai_udf_base_t;
+~~~
+
 #### UDF Attributes ####
 
 *sai\_udf\_attr\_t* defines the UDF attributes. SAI\_UDF\_ATTR\_MATCH\_L2\_TYPE, SAI\_UDF\_ATTR\_MATCH\_L3\_TYPE and SAI\_UDF\_ATTR\_MATCH\_GRE\_TYPE define the matching rule. SAI\_UDF\_ATTR\_OFFSET and SAI\_UDF\_ATTR\_MASK defines the extracting rule.
@@ -92,6 +114,10 @@ typedef enum _sai_udf_type_t
     * Property: CREATE\_ONLY
     * Value Type: sai\_acl\_field\_data\_t(uint16\_t)
     * Comment: UDF GRE match rule
+* SAI\_UDF\_BASE
+    * Property: CREATE\_AND\_SET
+    * Value Type: sai\_udf\_base\_t
+    * Comment: UDF base
 * SAI\_UDF\_ATTR\_OFFSET
     * Property: MANDATORY\_ON\_CREATE | CREATE\_AND\_SET
     * Value Type: uint16\_t
@@ -115,14 +141,17 @@ typedef enum _sai_udf_attr_t
     /* UDF type [sai_udf_type_t] (CREATE_ONLY) (default to SAI_UDF_GENERIC) */
     SAI_UDF_ATTR_TYPE,
 
-    /* UDF L2 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to 0x0800, Ethernet) */
+    /* UDF L2 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
     SAI_UDF_ATTR_MATCH_L2_TYPE,
 
-    /* UDF L3 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to 0x0600, TCP) */
+    /* UDF L3 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
     SAI_UDF_ATTR_MATCH_L3_TYPE,
 
-    /* UDF GRE match rule [sai_acl_field_data_t(sai_udf_type_t)] (CREATE_ONLY) (default to 0) */
+    /* UDF GRE match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
     SAI_UDF_ATTR_MATCH_GRE_TYPE,
+
+    /* UDF base [sai_udf_base_t] (CREATE_AND_SET) (default to SAI_UDF_BASE_L2) */
+    SAI_UDF_ATTR_BASE,
 
     /* UDF byte offset [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
     SAI_UDF_ATTR_OFFSET,
