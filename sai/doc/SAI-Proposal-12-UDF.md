@@ -117,7 +117,7 @@ typedef enum _sai_udf_base_t
 * SAI\_UDF\_BASE
     * Property: CREATE\_AND\_SET
     * Value Type: sai\_udf\_base\_t
-    * Comment: UDF base
+    * Comment: UDF baes
 * SAI\_UDF\_ATTR\_OFFSET
     * Property: MANDATORY\_ON\_CREATE | CREATE\_AND\_SET
     * Value Type: uint16\_t
@@ -144,7 +144,7 @@ typedef enum _sai_udf_attr_t
     /* UDF L2 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
     SAI_UDF_ATTR_MATCH_L2_TYPE,
 
-    /* UDF L3 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
+    /* UDF L3 match rule [sai_acl_field_data_t(uint8_t)] (CREATE_ONLY) (default to None) */
     SAI_UDF_ATTR_MATCH_L3_TYPE,
 
     /* UDF GRE match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */

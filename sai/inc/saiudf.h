@@ -76,7 +76,7 @@ typedef enum _sai_udf_attr_t
     /* UDF L2 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
     SAI_UDF_ATTR_MATCH_L2_TYPE,
 
-    /* UDF L3 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
+    /* UDF L3 match rule [sai_acl_field_data_t(uint8_t)] (CREATE_ONLY) (default to None) */
     SAI_UDF_ATTR_MATCH_L3_TYPE,
 
     /* UDF GRE match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
