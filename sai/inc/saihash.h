@@ -37,13 +37,13 @@
  */
 typedef enum _sai_hash_algorithm_t
 {
-    /* Sai crc-based hash algorithm */
+    /* SAI crc-based hash algorithm */
     SAI_HASH_ALGORITHM_CRC,
 
-    /* Sai xor-based hash algorithm */
+    /* SAI xor-based hash algorithm */
     SAI_HASH_ALGORITHM_XOR,
 
-    /* Sai random-based hash algorithm */
+    /* SAI random-based hash algorithm */
     SAI_HASH_RANDOM,
 
 } sai_hash_algorithm;
@@ -53,38 +53,35 @@ typedef enum _sai_hash_algorithm_t
  */
 typedef enum _sai_native_hash_field
 {
-    /* Sai native hash field source IP */
+    /* SAI native hash field source IP */
     SAI_NATIVE_HASH_FIELD_SRC_IP,
 
-    /* Sai native hash field destination IP */
+    /* SAI native hash field destination IP */
     SAI_NATIVE_HASH_FIELD_DST_IP,
 
-    /* Sai native hash field vlan id */
+    /* SAI native hash field vlan id */
     SAI_NATIVE_HASH_FIELD_VLAN_ID,
 
-    /* Sai native hash field IP protocol */
+    /* SAI native hash field IP protocol */
     SAI_NATIVE_HASH_FIELD_IP_PROTOCOL,
 
-    /* Sai native hash field ethernet type */
+    /* SAI native hash field ethernet type */
     SAI_NATIVE_HASH_FIELD_ETHERTYPE,
 
-    /* Sai native hash field L4 source port */
+    /* SAI native hash field L4 source port */
     SAI_NATIVE_HASH_FIELD_L4_SRC_PORT,
 
-    /* Sai native hash field L4 destination port */
+    /* SAI native hash field L4 destination port */
     SAI_NATIVE_HASH_FIELD_L4_DST_PORT,
 
-    /* Sai native hash field source MAC */
+    /* SAI native hash field source MAC */
     SAI_NATIVE_HASH_FIELD_SRC_MAC,
 
-    /* Sai native hash field destination MAC */
+    /* SAI native hash field destination MAC */
     SAI_NATIVE_HASH_FIELD_DST_MAC,
 
-    /* Sai native hash field source port*/
+    /* SAI native hash field source port*/
     SAI_NATIVE_HASH_FIELD_IN_PORT,
-    
-    /* Sai native hash field destination port*/
-    SAI_NATIVE_HASH_FIELD_OUT_PORT,
 
 } sai_native_hash_field;
 
@@ -97,11 +94,11 @@ typedef enum _sai_hash_attr_t
 
     /* READ-WRITE */
 
-    /* Sai hash native fields [sai_u32_list_t(sai_native_hash_field)] (CREATE_AND_SET) (default to an empty list) */
+    /* SAI hash native fields [sai_u32_list_t(sai_native_hash_field)] (CREATE_AND_SET) (default to an empty list) */
     SAI_HASH_NATIVE_FIELDS,
 
-    /* Sai hash UDF fields [sai_object_list_t(sai_object_id_t)] (CREATE_AND_SET) (default to an empty list) */
-    SAI_HASH_UDF_FIELDS
+    /* SAI hash UDF group [sai_udf_group_t] (CREATE_AND_SET) (default to SAI_NULL_OBJECT_ID) */
+    SAI_HASH_UDF_GROUP
 
 } sai_hash_attr_t;
 

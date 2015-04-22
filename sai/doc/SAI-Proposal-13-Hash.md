@@ -13,17 +13,19 @@ SAI Hash Proposal
 
 ## Overview ##
 
-SAI hash object is used to equally distribute different packets to target objects, e.g., the sai next hops. Hash is used to implement ECMP and LAG.
+SAI hash object is used to equally distribute different packets to target objects, e.g., the SAI next hops. Hash is used to implement ECMP and LAG.
 
-In the abstraction of SAI, every switch has a few global hash objects to handle different types of packets. The hash attributes of saiswitch are used to specify those hash objects. Saiswitch has two groups of hash attributes, an ECMP group and a LAG group.
+![SAI hash design proposal](figures/sai_hash.png "Figure 1: SAI hash design proposal")
 
-For the ECMP group, it has  the following attributes:
+The above figure shows the design of SAI hash. In the abstraction of SAI, every switch has a few global hash objects to handle different types of packets. The hash attributes of saiswitch are used to specify those hash objects. Saiswitch has two groups of hash attributes, an ECMP group and a LAG group.
+
+For the ECMP group, it has the following attributes:
 
 * SAI\_ECMP\_HASH specifies the hash object to handle all the packets going through ECMP.
 * SAI\_ECMP\_IPV4\_HASH specifies the hash object to handle all the IPv4 packets going through ECMP.
 * SAI\_ECMP\_IPV4\_IN\_IPV4\_HASH specifies the hash object to handle all the IPv4-In-IPv4 packets going through ECMP.
 
-For the LAG group, it has  the following attributes:
+For the LAG group, it has the following attributes:
 
 * SAI\_LAG\_HASH specifies the hash object to handle all the packets going through LAG.
 * SAI\_LAG\_IPV4\_HASH specifies the hash object to handle all the IPv4 packets going through LAG.
@@ -31,12 +33,17 @@ For the LAG group, it has  the following attributes:
 
 Default hash objects for these attributes should be created when the switch is initialized. Users could override them with their own hash object later.
 
-Sai hash object takes two steps to achieve its goal:
+SAI hash object takes two steps to achieve its goal:
 
 1. Extract certain fields from the packet.
 2. Compute the hash value based on the hash algorithm.
 
-There are two ways to extract the fields from the packet. The first one is to used the pre-defined fields, e.g., the source IP address for a IP packet, or the source port of a TCP packet. The second one is to use UDF (User Defined Field), which provides users the flexibility to extract customized fields from packets. SAI allows users to use both ways simultaneously. Hash algortihm is pre-defined. Currently, SAI supports the CRC based algorithm, the XOR based algorithm, and the random based algortihm.
+There are two ways to extract the fields from the packet:
+
+* Native Fields: The pre-defined fields, e.g., the source IP address for a IP packet, or the source port of a TCP packet.
+* UDF Group: UDF Group contains a set of UDFs. Each UDF match each the packet based on its rule. When a packet goes through a UDF group, all the UDFs that can match the packet will extract their fields. The extracted fields will be combined.
+
+The SAI hash algorithm and the hash seed are globally defined. They are signed as attributes of the switch. Currently, SAI hash algorithm supports the CRC based algorithm, the XOR based algorithm, and the random based algortihm.
 
 
 ## Specification ##
@@ -98,17 +105,11 @@ typedef enum _sai_switch_attr_t
 
     ...
 
-    /* Sai ECMP default hash algorithm [sai_hash_algorithm] (default to SAI_HASH_ALGORITHM_CRC) */
-    SAI_SWITCH_ATTR_DEFAULT_HASH_ALGORITHM,
+    /* SAI ECMP default hash algorithm [sai_hash_algorithm] (default to SAI_HASH_ALGORITHM_CRC) */
+    SAI_SWITCH_ATTR_ECMP_DEFAULT_HASH_ALGORITHM,
 
-    /* Sai ECMP default hash seed [uint32_t] (default to 0) */
-    SAI_SWITCH_ATTR_DEFAULT_HASH_SEED,
-
-    /* Sai LAG default hash algorithm [sai_hash_algorithm] (default to SAI_HASH_ALGORITHM_CRC) */
-    SAI_SWITCH_ATTR_DEFAULT_HASH_ALGORITHM,
-
-    /* Sai LAG default hash seed [uint32_t] (default to 0) */
-    SAI_SWITCH_ATTR_DEFAULT_HASH_SEED,
+    /* SAI ECMP default hash seed [uint32_t] (default to 0) */
+    SAI_SWITCH_ATTR_ECMP_DEFAULT_HASH_SEED,
 
     /* The hash object for packets going throught ECMP [sai_object_id_t] */
     SAI_SWITCH_ATTR_ECMP_HASH,
@@ -118,6 +119,12 @@ typedef enum _sai_switch_attr_t
 
     /* The hash object for IPv4 in IPv4 packets going throught ECMP [sai_object_id_t] */
     SAI_SWITCH_ATTR_ECMP_HASH_IPV4_IN_IPV4,
+
+    /* SAI LAG default hash algorithm [sai_hash_algorithm] (default to SAI_HASH_ALGORITHM_CRC) */
+    SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_ALGORITHM,
+
+    /* SAI LAG default hash seed [uint32_t] (default to 0) */
+    SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_SEED,
 
     /* The hash object for packets going throught LAG [sai_object_id_t] */
     SAI_SWITCH_ATTR_LAG_HASH,
@@ -144,13 +151,13 @@ typedef enum _sai_switch_attr_t
  */
 typedef enum _sai_hash_algorithm_t
 {
-    /* Sai crc-based hash algorithm */
+    /* SAI crc-based hash algorithm */
     SAI_HASH_ALGORITHM_CRC,
 
-    /* Sai xor-based hash algorithm */
+    /* SAI xor-based hash algorithm */
     SAI_HASH_ALGORITHM_XOR,
 
-    /* Sai random-based hash algorithm */
+    /* SAI random-based hash algorithm */
     SAI_HASH_RANDOM,
 
 } sai_hash_algorithm;
@@ -164,38 +171,35 @@ typedef enum _sai_hash_algorithm_t
  */
 typedef enum _sai_native_hash_field
 {
-    /* Sai native hash field source IP */
+    /* SAI native hash field source IP */
     SAI_NATIVE_HASH_FIELD_SRC_IP,
 
-    /* Sai native hash field destination IP */
+    /* SAI native hash field destination IP */
     SAI_NATIVE_HASH_FIELD_DST_IP,
 
-    /* Sai native hash field vlan id */
+    /* SAI native hash field vlan id */
     SAI_NATIVE_HASH_FIELD_VLAN_ID,
 
-    /* Sai native hash field IP protocol */
+    /* SAI native hash field IP protocol */
     SAI_NATIVE_HASH_FIELD_IP_PROTOCOL,
 
-    /* Sai native hash field ethernet type */
+    /* SAI native hash field ethernet type */
     SAI_NATIVE_HASH_FIELD_ETHERTYPE,
 
-    /* Sai native hash field L4 source port */
+    /* SAI native hash field L4 source port */
     SAI_NATIVE_HASH_FIELD_L4_SRC_PORT,
 
-    /* Sai native hash field L4 destination port */
+    /* SAI native hash field L4 destination port */
     SAI_NATIVE_HASH_FIELD_L4_DST_PORT,
 
-    /* Sai native hash field source MAC */
+    /* SAI native hash field source MAC */
     SAI_NATIVE_HASH_FIELD_SRC_MAC,
 
-    /* Sai native hash field destination MAC */
+    /* SAI native hash field destination MAC */
     SAI_NATIVE_HASH_FIELD_DST_MAC,
 
-    /* Sai native hash field source port*/
+    /* SAI native hash field source port*/
     SAI_NATIVE_HASH_FIELD_IN_PORT,
-
-    /* Sai native hash field destination port*/
-    SAI_NATIVE_HASH_FIELD_OUT_PORT,
 
 } sai_native_hash_field;
 ~~~
@@ -205,11 +209,11 @@ typedef enum _sai_native_hash_field
 * SAI\_HASH\_NATIVE\_FIELDS,
     * Property: CREATE\_AND\_SET
     * Value Type: sai\_u32\_list\_t(sai\_native\_hash\_field)
-    * Comment: Sai hash native fields
-* SAI\_HASH\_UDF\_FIELDS
+    * Comment: SAI hash native fields
+* SAI_HASH_UDF_GROUP
     * Property: CREATE\_AND\_SET
-    * Value Type: sai\_object\_list\_t(sai\_object\_id\_t)
-    * Comment: Sai hash UDF fields
+    * Value Type: sai\_udf\_group\_t
+    * Comment: SAI hash UDF group
 
 ~~~cpp
 /*
@@ -221,11 +225,11 @@ typedef enum _sai_hash_attr_t
 
     /* READ-WRITE */
 
-    /* Sai hash native fields [sai_u32_list_t(sai_native_hash_field)] (CREATE_AND_SET) (default to an empty list) */
+    /* SAI hash native fields [sai_u32_list_t(sai_native_hash_field)] (CREATE_AND_SET) (default to an empty list) */
     SAI_HASH_NATIVE_FIELDS,
 
-    /* Sai hash UDF fields [sai_object_list_t(sai_object_id_t)] (CREATE_AND_SET) (default to an empty list) */
-    SAI_HASH_UDF_FIELDS
+    /* SAI hash UDF group [sai_udf_group_t] (CREATE_AND_SET) (default to SAI_NULL_OBJECT_ID) */
+    SAI_HASH_UDF_GROUP
 
 } sai_hash_attr_t;
 ~~~
