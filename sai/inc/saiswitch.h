@@ -90,6 +90,22 @@ typedef enum _sai_switch_switching_mode_t
 } sai_switch_switching_mode_t;
 
 /*
+ * The sai hash algorithm
+ */
+typedef enum _sai_hash_algorithm_t
+{
+    /* SAI crc-based hash algorithm */
+    SAI_HASH_ALGORITHM_CRC,
+
+    /* SAI xor-based hash algorithm */
+    SAI_HASH_ALGORITHM_XOR,
+
+    /* SAI random-based hash algorithm */
+    SAI_HASH_RANDOM,
+
+} sai_hash_algorithm;
+
+/*
 *  Attribute Id in sai_set_switch_attribute() and 
 *  sai_get_switch_attribute() calls
 */

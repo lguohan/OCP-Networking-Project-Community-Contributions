@@ -33,22 +33,6 @@
 #include <saitypes.h>
 
 /*
- * The sai hash algorithm
- */
-typedef enum _sai_hash_algorithm_t
-{
-    /* SAI crc-based hash algorithm */
-    SAI_HASH_ALGORITHM_CRC,
-
-    /* SAI xor-based hash algorithm */
-    SAI_HASH_ALGORITHM_XOR,
-
-    /* SAI random-based hash algorithm */
-    SAI_HASH_RANDOM,
-
-} sai_hash_algorithm;
-
-/*
  * The sai native hash fields
  */
 typedef enum _sai_native_hash_field

@@ -19,67 +19,48 @@
  *
  * Module Name:
  *
- *    saiudf.h
+ *    saiudfmatch.h
  *
  * Abstract:
  *
- *    This module defines SAI UDF (User Defined Field)
+ *    This module defines SAI UDF match
  *
  */
 
-#if !defined (__SAIUDF_H_)
-#define __SAIUDF_H_
+#if !defined (__SAIUDFMATCH_H_)
+#define __SAIUDFMATCH_H_
 
 #include <saitypes.h>
 
 /*
- * Sai UDF base
+ *  Attribute id for UDF match
  */
-typedef enum _sai_udf_base_t
-{
-    /* Sai UDF base L2 */
-    SAI_UDF_BASE_L2,
-
-    /* Sai UDF base L3 */
-    SAI_UDF_BASE_L3,
-
-    /* Sai UDF base L4 */
-    SAI_UDF_BASE_L4,
-
-} sai_udf_base_t;
-
-/*
- *  Attribute id for UDF
- */
-typedef enum _sai_udf_attr_t
+typedef enum _sai_udf_match_attr_t
 {
     /* READ-ONLY */
 
     /* READ-WRITE */
 
-    /* UDF type [sai_udf_type_t] (CREATE_ONLY) (default to SAI_UDF_GENERIC) */
-    SAI_UDF_ATTR_TYPE,
+    /* UDF L2 match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
+    SAI_UDF_MATCH_ATTR_L2_TYPE,
 
-    /* UDF match [sai_udf_match_attr_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
-    SAI_UDF_ATTR_MATCH,
+    /* UDF L3 match rule [sai_acl_field_data_t(uint8_t)] (CREATE_ONLY) (default to None) */
+    SAI_UDF_MATCH_ATTR_L3_TYPE,
 
-    /* UDF base [sai_udf_base_t] (CREATE_AND_SET) (default to SAI_UDF_BASE_L2) */
-    SAI_UDF_ATTR_BASE,
+    /* UDF GRE match rule [sai_acl_field_data_t(uint16_t)] (CREATE_ONLY) (default to None) */
+    SAI_UDF_MATCH_ATTR_GRE_TYPE,
 
-    /* UDF byte offset [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
-    SAI_UDF_ATTR_OFFSET,
+    /* UDF match priority [uint8_t] (CREATE_ONLY) (default to 0) */
+    SAI_UDF_MATCH_ATTR_PRIORITY
 
-    /* UDF byte length [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
-    SAI_UDF_ATTR_LENGTH,
-
-} sai_udf_attr_t;
+} sai_udf_match_attr_t;
 
 /*
  * Routine Description:
- *    Create UDF
+ *    Create UDF match
  *
  * Arguments:
- *    [out] udf_id - UDF id
+ *    [out] udf_match_id - UDF match id
  *    [in] attr_count - number of attributes
  *    [in] attr_list - array of attributes
  *
@@ -87,50 +68,50 @@ typedef enum _sai_udf_attr_t
  *    SAI_STATUS_SUCCESS on success
  *    Failure status code on error
  */
-typedef sai_status_t (*sai_create_udf_fn)(
-    _Out_ sai_object_id_t* udf_id,
+typedef sai_status_t (*sai_create_udf_match_fn)(
+    _Out_ sai_object_id_t* udf_match_id,
     _In_ uint32_t attr_count,
     _In_ const sai_attribute_t *attr_list
     );
 
 /*
  * Routine Description:
- *    Remove UDF
+ *    Remove UDF match
  *
  * Arguments:
- *    [in] udf_id - UDF id
+ *    [in] udf_match_id - UDF match id
  *
  * Return Values:
  *    SAI_STATUS_SUCCESS on success
  *    Failure status code on error
  */
-typedef sai_status_t (*sai_remove_udf_fn)(
-    _In_ sai_object_id_t udf_id
+typedef sai_status_t (*sai_remove_udf_match_fn)(
+    _In_ sai_object_id_t udf_match_id
     );
 
 /*
  * Routine Description:
- *    Set UDF attribute
+ *    Set UDF match attribute
  *
  * Arguments:
- *    [in] sai_object_id_t - udf_id
+ *    [in] sai_object_id_t - udf_match_id
  *    [in] attr - attribute
  *
  * Return Values:
  *    SAI_STATUS_SUCCESS on success
  *    Failure status code on error
  */
-typedef sai_status_t (*sai_set_udf_attribute_fn)(
-    _In_ sai_object_id_t udf_id,
+typedef sai_status_t (*sai_set_udf_match_attribute_fn)(
+    _In_ sai_object_id_t udf_match_id,
     _In_ const sai_attribute_t *attr
     );
 
 /*
  * Routine Description:
- *    Get UDF attribute
+ *    Get UDF match attribute
  *
  * Arguments:
- *    [in] sai_object_id_t - udf_id
+ *    [in] sai_object_id_t - udf_match_id
  *    [in] attr_count - number of attributes
  *    [inout] attr_list - array of attributes
  *
@@ -138,22 +119,22 @@ typedef sai_status_t (*sai_set_udf_attribute_fn)(
  *    SAI_STATUS_SUCCESS on success
  *    Failure status code on error
  */
-typedef sai_status_t (*sai_get_udf_attribute_fn)(
-    _In_ sai_object_id_t udf_id,
+typedef sai_status_t (*sai_get_udf_match_attribute_fn)(
+    _In_ sai_object_id_t udf_match_id,
     _In_ uint32_t attr_count,
     _Inout_ sai_attribute_t *attr_list
     );
 
 /*
- *  UDF methods table retrieved with sai_api_query()
+ *  UDF match methods table retrieved with sai_api_query()
  */
-typedef struct _sai_udf_api_t
+typedef struct _sai_udf_match_api_t
 {
-    sai_create_udf_fn        create_udf;
-    sai_remove_udf_fn        remove_udf;
-    sai_set_udf_attribute_fn set_udf_attribute;
-    sai_get_udf_attribute_fn get_udf_attribute;
+    sai_create_udf_match_fn        create_udf_match;
+    sai_remove_udf_match_fn        remove_udf_match;
+    sai_set_udf_match_attribute_fn set_udf_match_attribute;
+    sai_get_udf_match_attribute_fn get_udf_match_attribute;
 
-} sai_udf_api_t;
+} sai_udf_match_api_t;
 
-#endif // __SAIUDF_H_
+#endif // __SAIUDF matchMATCH_H_

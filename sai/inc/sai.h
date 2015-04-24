@@ -78,7 +78,9 @@ typedef enum _sai_api_t
     SAI_API_STP              = 16,  /* sai_stp_api_t */
     SAI_API_LAG              = 17,  /* sai_lag_api_t */
     SAI_API_HASH             = 18,  /* sai_hash_api_t */
-    SAI_API_UDF              = 19,  /* sai_udf_api_t */
+    SAI_API_UDF_GROUP        = 19,  /* sai_udf_group_api_t */
+    SAI_API_UDF              = 20,  /* sai_udf_api_t */
+    SAI_API_UDF_MATCH        = 21,  /* sai_udf_group_api_t */
 } sai_api_t;
 
 typedef enum _sai_log_level_t
