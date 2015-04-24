@@ -1,7 +1,7 @@
 SAI Hash Proposal
 =====================
 
- Title       | SAI Hash Proposal
+ Title       | SAI Hash Enhanncement Proposal
 -------------|----------------------
  Authors     | Microsoft
  Status      | In review
@@ -13,42 +13,39 @@ SAI Hash Proposal
 
 ## Overview ##
 
-SAI hash object is used to equally distribute different packets to target objects, e.g., the SAI next hops. Hash is used to implement ECMP and LAG.
-
-![SAI hash design proposal](figures/sai_hash.png "Figure 1: SAI hash design proposal")
+SAI hash object extract several fields from a packet and use them as well as some meta data to calculate a hash value for that packet. The hash value calculated can be use to spread the packets to a set of objects, e.g., the SAI next hops. Hash can be used on both ECMP and LAG. This proposal enhances existing SAI hash function by allowing different packet types to extract different hash fields, and also allow to use user-defined fields to be used as hash fields.
 
 In this proposal, we propose five major parts, switch attributes, hash object, UDF group object, UDF object, UDF match object. Their relationship is shown in the above figure. The overall goal is to compute hash value for different types of packets.
 
+![SAI hash design proposal](figures/sai_hash.png "Figure 1: SAI hash design proposal")
+
 ### Switch Attributes ###
 
-We propose a few attribtues for SAI switch to specify the hash object for different types of packets. Since there is only one SAI switch object, these hash objects can be treated as global hash handlers for different types of packets. There are two groups of hash objects, the ECMP group and the LAG group.
+We propose a few attribtues for SAI switch to specify the hash object for different packet types. Since there is only one SAI switch object, these hash objects can be treated as global hash handlers for different packet types. There are two groups of hash objects, the ECMP group and the LAG group.
 
-For the ECMP group, it has the following attributes:
+For the ECMP group, it has the following attributes. More packet types can be defined in the future.
 
 * SAI\_ECMP\_HASH specifies the hash object to handle all the packets going through ECMP.
 * SAI\_ECMP\_IPV4\_HASH specifies the hash object to handle all the IPv4 packets going through ECMP.
 * SAI\_ECMP\_IPV4\_IN\_IPV4\_HASH specifies the hash object to handle all the IPv4-In-IPv4 packets going through ECMP.
 
-For the LAG group, it has the following attributes:
+For the LAG group, it has the following attributes. More packet types can be defined in the future.
 
 * SAI\_LAG\_HASH specifies the hash object to handle all the packets going through LAG.
 * SAI\_LAG\_IPV4\_HASH specifies the hash object to handle all the IPv4 packets going through LAG.
 * SAI\_LAG\_IPV4\_IN\_IPV4\_HASH specifies the hash object to handle all the IPv4-In-IPv4 packets going through LAG.
 
-Default hash objects for these attributes should be created when the switch is initialized. Users could override them with their own hash object later.
+Default hash objects for these attributes must be created when the switch is initialized. Users could override them with their own hash object later.
 
 ### Hash ###
 
-SAI hash object is used to compute the hash value for a packet. SAI hash object takes two steps to achieve its goal:
+SAI hash object is used to extract hash fields for a packet.To extract the fields of the packet, SAI hash object uses the attributes of native fields (`sai_native_hash_field`) and the UDF groups. 
 
-1. Extract certain fields from the packet.
-2. Compute the hash value based on the hash algorithm.
-
-To extract the fields of the packet, SAI hash object uses the attributes of native fields and the UDF groups. The hash algorithm and seed for the hash objects is globally set using the SAI switch attributes, SAI\_SWITCH\_ATTR\_ECMP\_DEFAULT\_HASH\_ALGORITHM, SAI\_SWITCH\_ATTR\_LAG\_DEFAULT\_HASH\_ALGORITHM, SAI\_SWITCH\_ATTR\_ECMP\_DEFAULT\_HASH\_SEED, SAI\_SWITCH\_ATTR\_LAG\_DEFAULT\_HASH\_SEED.
+Global hash algorithm and seed is used to calculate the hash value based on the extracted fields, i.e, SAI\_SWITCH\_ATTR\_ECMP\_DEFAULT\_HASH\_ALGORITHM, SAI\_SWITCH\_ATTR\_LAG\_DEFAULT\_HASH\_ALGORITHM, SAI\_SWITCH\_ATTR\_ECMP\_DEFAULT\_HASH\_SEED, SAI\_SWITCH\_ATTR\_LAG\_DEFAULT\_HASH\_SEED.
 
 ### UDF Group ###
 
-SAI UDF group object is used to extract a single field from a packet, which can be a arbitary type. SAI UDF group contains a list of UDFs. Each UDF will be used to extract a field for a certain type of packet. When a packet goes through a UDF group object, one UDF is selected based on its matching rule and priority, and used to extract the field.
+SAI UDF group object is used to extract a single field from a packet. Since incoming packet can be different type, e.g., ipv4, ipv4-in-ipv4. SAI UDF group contains a list of UDFs, each of which is used to extract a field for a certain type of packet. When a packet goes through a UDF group object, one UDF is selected based on its UDF match object.
 
 A UDF group that will be used in hash should be set SAI\_UDF\_GROUP\_HASH as the group type.
 
@@ -58,7 +55,7 @@ UDF object is used to extract a single field for a certain type of packet. UDF o
 
 ### UDF Match ###
 
-UDF match object defines the rule to match the packet. It also defines a matching priority. In a UDF group, if multiple UDF matches a packet, the UDF with top priority wins.
+UDF match object contains a set of matching fields to match the packet. The matching fields is simliar to ACL match fields with limited types. It also defines a matching priority. In a UDF group, if multiple UDF matches a packet, the UDF with top priority wins.
 
 In SAI, UDF match object with the same matching rule can only be created once.
 
@@ -101,7 +98,7 @@ typedef enum _sai_api_t
     SAI_API_HASH             = 18,  /* sai_hash_api_t */
     SAI_API_UDF_GROUP        = 19,  /* sai_udf_group_api_t */
     SAI_API_UDF              = 20,  /* sai_udf_api_t */
-    SAI_API_UDF_MATCH        = 21,  /* sai_udf_group_api_t */
+    SAI_API_UDF_MATCH        = 21,  /* sai_udf_match_api_t */
 } sai_api_t;
 ~~~
 
@@ -818,7 +815,7 @@ typedef struct _sai_udf_match_api_t
 
 ## Example ##
 
-The following example shows how to use SAI hash to compute a hash value for a packet.
+The following example shows how to define UDF hash fields for all IPv4 packets. It first defines one UDF match object to match GRE packet with specific GRE protocol type. It then creates two UDF objects based on this match object and adds them to two UDF groups. Finally, it uses these two UDF groups as the hash fields for all IPv4 packets.
 
 ~~~cpp
 // Set XOR hash algorithm
