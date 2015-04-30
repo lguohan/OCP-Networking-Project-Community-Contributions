@@ -16,6 +16,7 @@ SAI-Version | 0.9.3
 
 This document gives an overview of other seven QoS proposals: QoS Maps, Queue, Buffer, Scheduler, Scheduler Groups, WRED and Policer. 
 
+![SAI QoS objects relationship](figures/qos-overview.png "Figure 1: SAI Qos objects relationship")
 
 ## QoS MAPS
 
