@@ -529,6 +529,9 @@ typedef enum _sai_udf_group_attr_t
     /* UDF group type [sai_udf_group_type_t] (CREATE_ONLY) (default to SAI_UDF_GENERIC) */
     SAI_UDF_GROUP_ATTR_TYPE,
 
+    /* UDF list [sai_object_list_t] (CREATE_AND_SET) */
+    SAI_UDF_GROUP_ATTR_UDF_LIST,
+
 } sai_udf_group_attr_t;
 ~~~
 
@@ -821,7 +824,7 @@ The following example shows how to define UDF hash fields for all IPv4 packets. 
 // Set XOR hash algorithm
 sai_switch_attr_t switch_attr;
 switch_attr.id = (sai_attr_id_t)SAI_SWITCH_ATTR_DEFAULT_HASH_ALGORITHM;
-switch_attr.value.u64 = (uint64_t)SAI_HASH_ALGORITHM_XOR;
+switch_attr.value.s32 = SAI_HASH_ALGORITHM_XOR;
 sai_switch_api->set_switch_attribute(&switch_attr);
 
 // Create UDF match 1 to match the GRE packet
@@ -841,7 +844,7 @@ sai_attribute_t udf1_attrs[4];
 udf1_attrs[0].id = (sai_attr_id_t)SAI_UDF_ATTR_MATCH;
 udf1_attrs[0].value.oid = udf_match1_id;
 udf1_attrs[1].id = (sai_attr_id_t)SAI_UDF_ATTR_BASE;
-udf1_attrs[1].value.u64 = (uint64_t)SAI_UDF_BASE_L2;
+udf1_attrs[1].value.s32 = SAI_UDF_BASE_L2;
 udf1_attrs[2].id = (sai_attr_id_t)SAI_UDF_ATTR_OFFSET;
 udf1_attrs[2].value.u16 = 56;
 udf1_attrs[3].id = (sai_attr_id_t)SAI_UDF_ATTR_LENGTH;
@@ -854,7 +857,7 @@ sai_attribute_t udf2_attrs[4];
 udf2_attrs[0].id = (sai_attr_id_t)SAI_UDF_ATTR_MATCH;
 udf2_attrs[0].value.oid = udf_match1_id;
 udf2_attrs[1].id = (sai_attr_id_t)SAI_UDF_ATTR_BASE;
-udf2_attrs[1].value.u64 = (uint64_t)SAI_UDF_BASE_L2;
+udf2_attrs[1].value.s32 = SAI_UDF_BASE_L2;
 udf2_attrs[2].id = (sai_attr_id_t)SAI_UDF_ATTR_OFFSET;
 udf2_attrs[2].value.u16 = 60;
 udf2_attrs[3].id = (sai_attr_id_t)SAI_UDF_ATTR_LENGTH;
@@ -863,17 +866,20 @@ sai_udf_api->create_udf(&udf2_id, 4, udf2_attrs);
 
 // Create two UDF groups
 sai_object_id_t udf_group_ids[2];
-sai_attribute_t udf_group_attr;
-udf_group_attr.id = (sai_attr_id_t)SAI_UDF_GROUP_ATTR_TYPE;
-udf_group_attr.value.u64 = (uint64_t)SAI_UDF_HASH;
+sai_attribute_t udf_group_attrs[2];
+udf_group_attrs[0].id = (sai_attr_id_t)SAI_UDF_GROUP_ATTR_TYPE;
+udf_group_attrs[0].value.s32 = SAI_UDF_HASH;
+udf_group_attrs[1].id = (sai_attr_id_t)SAI_UDF_GROUP_ATTR_UDF_LIST;
+udf_group_attrs[1].value.objlist.count = 1;
+udf_group_attrs[1].value.objlist.list = &udf1_id;
+sai_udf_group_api->create_udf_group(&udf_group_ids[0], 2, udf_group_attrs);
 
-sai_udf_group_api->create_udf_group(&udf_group_ids[0]);
-sai_udf_group_api->set_udf_group_attribute(udf_group_ids[0], 1, &udf_group_attr);
-sai_udf_group_api->add_udf_to_group(udf_group_ids[0], 1, &udf1_id);
-
-sai_udf_group_api->create_udf_group(&udf_group_ids[1]);
-sai_udf_group_api->set_udf_group_attribute(udf_group_ids[1], 1, &udf_group_attr);
-sai_udf_group_api->add_udf_to_group(udf_group_ids[1], 1, &udf2_id);
+udf_group_attrs[0].id = (sai_attr_id_t)SAI_UDF_GROUP_ATTR_TYPE;
+udf_group_attrs[0].value.s32 = SAI_UDF_HASH;
+udf_group_attrs[1].id = (sai_attr_id_t)SAI_UDF_GROUP_ATTR_UDF_LIST;
+udf_group_attrs[1].value.objlist.count = 1;
+udf_group_attrs[1].value.objlist.list = &udf2_id;
+sai_udf_group_api->create_udf_group(&udf_group_ids[1], 2, udf_group_attrs);
 
 // Create a hash object for the two UDFs
 sai_object_id_t hash_id;
