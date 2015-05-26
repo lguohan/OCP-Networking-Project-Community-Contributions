@@ -234,10 +234,10 @@ typedef enum _sai_hash_attr_t
     /* READ-WRITE */
 
     /* SAI hash native fields [sai_u32_list_t(sai_native_hash_field)] (CREATE_AND_SET) (default to an empty list) */
-    SAI_HASH_NATIVE_FIELDS,
+    SAI_HASH_NATIVE_FIELD_LIST,
 
-    /* SAI hash UDF group [sai_udf_group_t] (CREATE_AND_SET) (default to SAI_NULL_OBJECT_ID) */
-    SAI_HASH_UDF_GROUP
+    /* SAI hash UDF group [sai_object_list_t(sai_udf_group_t)] (CREATE_AND_SET) (default to an empty list) */
+    SAI_HASH_UDF_GROUP_LIST
 
 } sai_hash_attr_t;
 ~~~
@@ -884,7 +884,7 @@ sai_udf_group_api->create_udf_group(&udf_group_ids[1], 2, udf_group_attrs);
 // Create a hash object for the two UDFs
 sai_object_id_t hash_id;
 sai_attribute_t hash_attr;
-hash_attr.id = (sai_attr_id_t)SAI_HASH_UDF_FIELDS;
+hash_attr.id = (sai_attr_id_t)SAI_HASH_UDF_GROUP_LIST;
 hash_attr.value.objlist.object_count = 2;
 hash_attr.value.objlist.object_list = udf_group_ids;
 sai_hash_api->create_hash(&hash_id, 1, &hash_attr);

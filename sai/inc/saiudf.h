@@ -57,9 +57,6 @@ typedef enum _sai_udf_attr_t
 
     /* READ-WRITE */
 
-    /* UDF type [sai_udf_type_t] (CREATE_ONLY) (default to SAI_UDF_GENERIC) */
-    SAI_UDF_ATTR_TYPE,
-
     /* UDF match [sai_udf_match_attr_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
     SAI_UDF_ATTR_MATCH,
 
