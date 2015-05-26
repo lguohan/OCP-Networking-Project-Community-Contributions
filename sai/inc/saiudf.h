@@ -69,6 +69,11 @@ typedef enum _sai_udf_attr_t
     /* UDF byte length [uint16_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
     SAI_UDF_ATTR_LENGTH,
 
+    /* UDF Mask [sai_u8_list_t](CREATE_AND_SET) (default to 2 bytes, value 0xFF, 0xFF)
+     * The count in the list must be equal to the UDF byte length.
+     * The mask only applies to extracted UDF when it is used for hash,
+     * it does not apply to the extracted UDF when it is used for ACL.  */
+    SAI_UDF_ATTR_HASH_MASK
 } sai_udf_attr_t;
 
 /*
