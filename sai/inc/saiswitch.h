@@ -170,6 +170,9 @@ typedef enum _sai_switch_attr_t
     /* Default SAI STP instance ID [sai_object_id_t] */
     SAI_SWITCH_ATTR_DEFAULT_STP_INST_ID,
 
+    /* Default SAI Virtual Router ID [sai_object_id_t] */
+    SAI_SWITCH_ATTR_DEFAULT_VIRTUAL_ROUTER_ID,
+
     /* READ-WRITE */
 
     /* Switching mode [sai_switch_switching_mode_t]
