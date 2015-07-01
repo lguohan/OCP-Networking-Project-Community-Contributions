@@ -170,7 +170,8 @@ typedef enum _sai_switch_attr_t
     /* Default SAI STP instance ID [sai_object_id_t] */
     SAI_SWITCH_ATTR_DEFAULT_STP_INST_ID,
 
-    /* Default SAI Virtual Router ID [sai_object_id_t] */
+    /* Default SAI Virtual Router ID [sai_object_id_t]
+     * Must return SAI_STATUS_OBJECT_IN_USE when try to delete this VR ID. */
     SAI_SWITCH_ATTR_DEFAULT_VIRTUAL_ROUTER_ID,
 
     /* READ-WRITE */
