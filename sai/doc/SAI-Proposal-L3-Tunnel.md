@@ -40,6 +40,14 @@ __Figure 2: Relations between SAI objects for L3 Tunnel igress interface__
 
 # Specification #
 
+## New Switch Attributes ##
+
+~~~cpp
+/* READ-ONLY */
+/* Does Switch support Next Hop lookup after tunnel encap [bool] */
+SAI_SWITCH_ATTR_TUNNEL_EGRESS_NEXT_HOP_SUPPORT,
+
+~~~
 ## Changes To sai.h ##
 
 A new type **SAI_API_L3_TUNNEL** is added.
@@ -102,23 +110,23 @@ typedef enum _sai_next_hop_attr_t
 
 ## New Header sail3tunnelintf.h ##
 
-### L3 Tunnel Egress Interface Type ###
+### L3 Tunnel Interface Type ###
 
-*sai_l3_tunnel_egress_interface_type_t* defines the types of the tunnel. More specifically, it specifies the type of the encapsulated header. Currently, IPv4 and IPv6 are supported.
+*sai_l3_tunnel_interface_type_t* defines the types of the tunnel. More specifically, it specifies the type of the encapsulated header. Currently, IPv4 and IPv6 are supported.
 
 ~~~cpp
 /*
- * L3 tunnel egress interface type, i.e., the type of the encapped header
+ * L3 tunnel interface type, i.e., the type of the encapped header
  */
-typedef enum _sai_l3_tunnel_egress_interface_type_t
+typedef enum _sai_l3_tunnel_interface_type_t
 {
-    /* Sai l3 tunnel egress interface IPv4 */
-    SAI_L3_TUNNEL_EGRESS_INTERFACE_IPV4,
+    /* Sai l3 tunnel interface IPv4 */
+    SAI_L3_TUNNEL_INTERFACE_IPV4,
 
-    /* Sai l3 tunnel egress interface IPv6 */
-    SAI_L3_TUNNEL_EGRESS_INTERFACE_IPV6,
+    /* Sai l3 tunnel interface IPv6 */
+    SAI_L3_TUNNEL_INTERFACE_IPV6,
 
-} sai_l3_tunnel_egress_interface_type_t;
+} sai_l3_tunnel_interface_type_t;
 ~~~
 
 ### L3 Tunnel Egress Interface Attribute ###
@@ -189,30 +197,28 @@ typedef enum _sai_l3_tunnel_egress_interface_attr_t
 } sai_l3_tunnel_egress_interface_attr_t;
 ~~~
 
-### L3 Tunnel Ingress Interface Type ###
+### L3 Tunnel Ingress Interface Attribute ECN copy mode ###
 
-*sai_l3_tunnel_ingress_interface_type_t* defines the types of the tunnel. More specifically, it specifies the type of the encapsulated header. Currently, IPv4 and IPv6 are supported.
+*sai_l3_tunnel_ingress_interface_attr_copy_ecn_mod_t* defines how the ECN is copied from outside header to inside header
 
 ~~~cpp
-
 /*
- * L3 tunnel ingress interface type, i.e., the type of the incoming encapped header
+ * L3 tunnel ingress interface attribute ecn copy mode
  */
-typedef enum _sai_l3_tunnel_ingress_interface_type_t
+typedef enum _sai_l3_tunnel_ingress_interface_attr_copy_ecn_t
 {
-    /* Sai l3 tunnel ingress interface IPv4 */
-    SAI_L3_TUNNEL_INGRESS_INTERFACE_IPV4,
+    /* Copy ecn from outside header to inside header after tunnel decap */
+    SAI_L3_TUNNEL_INTERFACE_ATTR_COPY_ECN_MODE_SIMPLE,
 
-    /* Sai l3 tunnel ingress interface IPv6 */
-    SAI_L3_TUNNEL_INGRESS_INTERFACE_IPV6,
+    /* Follow RFC 6040 */
+    SAI_L3_TUNNEL_INTERFACE_ATTR_COPY_ECN_MODE_RFC6040,
 
-} sai_l3_tunnel_ingress_interface_type_t;
-
+} sai_l3_tunnel_ingress_interface_attr_copy_ecn_t;
 ~~~
 
 ### L3 Tunnel Ingress Interface Attribute ###
 
-*sai\_l3\_tunnel\_egress\_interface\_attr\_t* defines the l3 tunnel egress interface attributes.
+*sai\_l3\_tunnel\_egress\_interface\_attr\_t* defines the l3 tunnel ingress interface attributes.
 
 * SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_TYPE
     * Property: MANDATORY\_ON\_CREATE | CREATE\_ONLY
@@ -221,21 +227,25 @@ typedef enum _sai_l3_tunnel_ingress_interface_type_t
 * SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_ROUTER\_INTF\_LIST   
     * Property: MANDATORY\_ON\_CREATE | CREATE\_AND\_SET
     * Value Type: sai\_object\_list\_t
-    * Comment: L3 interfaces on which the tunnel encapped packet is allowed to ingress into the switch
-* SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_SIP_PREFIX
+    * Comment: L3 interfaces on which the tunnel encapped packet is allowed to ingress into the switch. If this match fails some silicon may decide to forward the packet to CPU
+* SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_SIP\_PREFIX
     * Property: MANDATORY\_ON\_CREATE | CREATE\_AND\_SET
     * Value Type: sai\_ip\_prefix\_t
     * Comment: L3 tunnel ingress interface source IP address prefix. This has to be coherent with the SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_TYPE.
-* SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_DIP_PREFIX
+* SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_DIP
     * Property: MANDATORY\_ON\_CREATE | CREATE\_AND\_SET
     * Value Type: sai\_ip\_prefix\_t
     * Comment: L3 tunnel ingress interface destination IP address prefix. This has to be coherent with the SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_TYPE.
 * SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_DSCP
     * Property: CREATE\_AND\_SET
     * Value Type: bool
-    * Comment: Whether to copy outer DSCP field to inner header DSCP. The default value is false.
-* SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_VIRTUAL\_ROUTER
+    * Comment: Whether to copy outer DSCP field to inner header DSCP field. Default value is false.
+* SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_COPY\_ECN
     * Property: CREATE\_AND\_SET
+    * Value Type: sai\_object\_id\_t
+    * Comment: Whether to copy outer ECN field to inner header ECN (simple) or comply to RFC6040. The default behavior is simple.
+* SAI\_L3\_TUNNEL\_INGRESS\_INTERFACE\_ATTR\_VIRTUAL\_ROUTER_ID
+    * Property: MANDATORY\_ON\_CREATE 
     * Value Type: sai\_object\_id\_t
     * Comment: Virtual router associated with this tunnel. Post Decap the L3 address lookup will happen in this VRF. The default value is SAI_NULL_OBJECT_ID which corresponds to the global virtual router.
 
@@ -258,14 +268,18 @@ typedef enum _sai_l3_tunnel_ingress_interface_attr_t
     SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_SIP_PREFIX,
 
     /* L3 tunnel ingress interface destination IP address. This has to be coherent with the SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_TYPE. [sai_ip_prefix_t] (MANDATORY_ON_CREATE|CREATE_AND_SET) */
-    SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_DIP_PREFIX,
+    SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_DIP,
 
     /* L3 tunnel ingress interface dscp, whether to copy outer DSCP field to inner header.
-     * [bool] (CREATE_AND_SET) (default to FALSE) */
+     * [bool] (CREATE_AND_SET) (default to false) */
     SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_DSCP,
 
-    /* L3 tunnel ingress interface virtual router [sai_object_id_t] (CREATE_AND_SET) (default to SAI_NULL_OBJECT_ID) */
-    SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_VIRTUAL_ROUTER,
+    /* L3 tunnel ingress interface ECN, whether to copy outer ECN field to inner header.
+     * [sai_object_id_t] (CREATE_AND_SET) (default to SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_COPY_ECN_MODE_SIMPLE) */
+    SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_COPY_ECN,
+
+    /* L3 tunnel ingress interface virtual router [sai_object_id_t] (MANDATORY_ON_CREATE ) (default to SAI_NULL_OBJECT_ID) */
+    SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_VIRTUAL_ROUTER_ID,
 } sai_l3_tunnel_ingress_interface_attr_t;
 
 ~~~
@@ -557,7 +571,7 @@ for(cnt =0; cnt < 8; cnt++) {
 
 l3_tunnel_ingress_interface_attrs[1].id = (sai_attr_id_t)SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_TYPE;
 l3_tunnel_ingress_interface_attrs[1].value.u64 = (sai_uint64_t)SAI_L3_TUNNEL_INGRESS_INTERFACE_IPV4; // This is a IPv4 tunnel.
-l3_tunnel_ingress_interface_attrs[2].id = (sai_attr_id_t)SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_SIP;
+l3_tunnel_ingress_interface_attrs[2].id = (sai_attr_id_t)SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_SIP_PREFIX;
 l3_tunnel_egress_interface_attrs[2].value.ipaddr = ntohl(sip.addr()); // The source IP address of the outer IP header.
 l3_tunnel_ingress_interface_attrs[3].id = (sai_attr_id_t)SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_DIP;
 l3_tunnel_ingress_interface_attrs[3].value.ipaddr = ntohl(dip.addr()); // The destination IP address of the outer IP header.
@@ -593,7 +607,7 @@ The following code shows how to set attributes to the tunnel interface:
 
 ~~~cpp
 sai_attribute_t l3_tunnel_ingress_interface_attr;
-l3_tunnel_ingress_interface_attr.id = (sai_attr_id_t)SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_DSCP;
+l3_tunnel_ingress_interface_attr.id = (sai_attr_id_t)SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_COPY_DSCP_MODE;
 l3_tunnel_ingress_interface_attr.value.u8 = 1;
 
 if (sai_tunnel_api->set_l3_tunnel_ingress_interface_attribute(&tunnel_interface_id, &l3_tunnel_ingress_interface_attr) == SAI_STATUS_SUCCESS)
@@ -613,7 +627,7 @@ The following code shows how to get attributes to the tunnel interface:
 ~~~cpp
 sai_attribute_t l3_tunnel_ingress_interface_attr;
 
-l3_tunnel_ingress_interface_attr.id = (sai_attr_id_t)SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_DSCP;
+l3_tunnel_ingress_interface_attr.id = (sai_attr_id_t)SAI_L3_TUNNEL_INGRESS_INTERFACE_ATTR_COPY_DSCP_MODE;
 
 if (sai_tunnel_api->get_l3_tunnel_ingress_interface_attribute(&tunnel_interface_id, &l3_tunnel_ingress_interface_attr) == SAI_STATUS_SUCCESS)
 {
