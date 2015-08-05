@@ -73,8 +73,8 @@ typedef enum _sai_qos_map_type_t
     /** Qos Map to set priority group to PFC priority */
     SAI_QOS_MAP_PRIORITY_GROUP_TO_PFC_PRIORITY = 0x0000000c,
 
-    /** Qos Map to set PFC priority to traffic class */
-    SAI_QOS_MAP_PFC_PRIORITY_TO_TC = 0x0000000d,
+    /** Qos Map to set PFC priority to queue */
+    SAI_QOS_MAP_PFC_PRIORITY_TO_QUEUE = 0x0000000d,
 
     /* -- */
     /* Custom range base value */
