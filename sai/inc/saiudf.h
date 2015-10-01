@@ -62,7 +62,7 @@ typedef enum _sai_udf_attr_t
 
     /** READ-WRITE */
 
-    /** UDF L2 match ID [sai_object_id_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
+    /** UDF match ID [sai_object_id_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
     SAI_UDF_ATTR_MATCH_ID,
 
     /** UDF group id [sai_object_id_t] (MANDATORY_ON_CREATE|CREATE_ONLY) */
@@ -352,7 +352,7 @@ typedef sai_status_t (*sai_get_udf_group_attribute_fn)(
     );
 
 /**
- *  @brief UDF table methods, retrieved via sai_api_query()
+ *  @brief UDF methods, retrieved via sai_api_query()
  */
 typedef struct _sai_udf_api_t
 {

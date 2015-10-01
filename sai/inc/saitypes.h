@@ -178,6 +178,26 @@ typedef enum _sai_object_type_t {
     SAI_OBJECT_TYPE_MAX              = 29
 } sai_object_type_t;
 
+typedef struct _sai_u8_list_t {
+    uint32_t count;
+    uint8_t *list;
+} sai_u8_list_t;
+
+typedef struct _sai_s8_list_t {
+    uint32_t count;
+    int8_t  *list;
+} sai_s8_list_t;
+
+typedef struct _sai_u16_list_t {
+    uint32_t count;
+    uint16_t *list;
+} sai_u16_list_t;
+
+typedef struct _sai_s16_list_t {
+    uint32_t count;
+    int16_t  *list;
+} sai_s16_list_t;
+
 typedef struct _sai_u32_list_t {
     uint32_t count;
     uint32_t *list;
@@ -449,6 +469,10 @@ typedef union {
     sai_ip_address_t ipaddr;
     sai_object_id_t oid;
     sai_object_list_t objlist;
+    sai_u8_list_t u8list;
+    sai_s8_list_t s8list;
+    sai_u16_list_t u16list;
+    sai_s16_list_t s16list;
     sai_u32_list_t u32list;
     sai_s32_list_t s32list;
     sai_u32_range_t u32range;
